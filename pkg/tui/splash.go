@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"log/slog"
 	"p1/pkg/api"
 	"time"
 
@@ -15,6 +16,10 @@ type Splash struct {
 
 type DelayCompleteMsg struct{}
 
+type BrokerDataLoaded struct{}
+
+type WebSocketConnected struct{}
+
 func (m model) LoadCmds() []tea.Cmd {
 	cmds := []tea.Cmd{}
 
@@ -23,27 +28,22 @@ func (m model) LoadCmds() []tea.Cmd {
 		return DelayCompleteMsg{}
 	}))
 
-	// cmds = append(cmds, func() tea.Msg {
-	// 	response, err := m.client.View.Init(m.context)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	return response.Data
-	// })
+	// Initialize websocket client
+	m.wsClient = NewWebSocketClient("ws://localhost:8080/ws") // Replace with your actual websocket URL
+	cmds = append(cmds, m.wsClient.Connect())
 
 	return cmds
 }
+
 func (m model) IsLoadingComplete() bool {
 	return m.splash.data &&
-		m.splash.delay
+		m.splash.delay &&
+		m.wsConnected
 }
-
-type BrokerDataLoaded struct{}
 
 func (m model) SplashInit() tea.Cmd {
 	cmd := func() tea.Msg {
 		api.FetchBrokerState()
-
 		return BrokerDataLoaded{}
 	}
 	disableMouseCmd := func() tea.Msg {
@@ -54,12 +54,21 @@ func (m model) SplashInit() tea.Cmd {
 }
 
 func (m model) SplashUpdate(msg tea.Msg) (model, tea.Cmd) {
-	switch msg.(type) {
+	switch msg := msg.(type) {
 	case BrokerDataLoaded:
+		m.splash.data = true
 		return m, tea.Batch(m.LoadCmds()...)
 	case DelayCompleteMsg:
 		m.splash.delay = true
-		m.splash.data = true
+	case WebSocketUpdateMsg:
+		if data, ok := msg.Data.(map[string]interface{}); ok {
+			if data["type"] == "connected" {
+				m.wsConnected = true
+				return m, nil
+			}
+			// Handle other message types here
+			slog.Info("Received websocket update", "data", data)
+		}
 	}
 
 	if m.IsLoadingComplete() {

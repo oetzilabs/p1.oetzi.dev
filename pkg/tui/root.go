@@ -2,8 +2,11 @@ package tui
 
 import (
 	"context"
+	"errors"
 	"math"
 
+	"p1/pkg/client"
+	"p1/pkg/models"
 	"p1/pkg/tui/theme"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -23,6 +26,8 @@ const (
 
 const (
 	projectsScreen screen = iota
+	serversScreen
+	brokersScreen
 	aboutScreen
 )
 
@@ -53,26 +58,42 @@ type model struct {
 	viewport        viewport.Model
 	theme           theme.Theme
 	error           *VisibleError
+	wsClient        *WebSocketClient // Will be implemented later
+	wsConnected     bool
+	client          *client.Client
+	updateSub       chan models.Update
 }
 
 type VisibleError struct {
 	message string
 }
 
-// type children struct {
-// }
+// WebSocketUpdateMsg represents a message received from the websocket
+type WebSocketUpdateMsg struct {
+	Type string
+	Data interface{}
+}
 
 func NewModel(
 	renderer *lipgloss.Renderer,
+	wsURL string,
 	command []string,
 ) (tea.Model, error) {
-	ctx := context.Background()
+	if wsURL == "" {
+		return nil, errors.New("WEBSOCKET_URL is not set")
+	}
+
+	client := client.NewClient(wsURL)
+
+	go client.Start(context.Background())
 
 	result := model{
-		context:  ctx,
-		page:     splashPage,
-		renderer: renderer,
-		theme:    theme.BasicTheme(renderer, nil),
+		client:    client,
+		updateSub: client.Subscribe(),
+		context:   context.Background(),
+		page:      splashPage,
+		renderer:  renderer,
+		theme:     theme.BasicTheme(renderer, nil),
 	}
 
 	return result, nil
@@ -135,12 +156,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case "ctrl+c":
+			if m.wsClient != nil {
+				m.wsClient.Disconnect()
+			}
 			return m, tea.Quit
 		}
 	case CursorTickMsg:
 		m, cmd := m.CursorUpdate(msg)
 		m.viewport.SetContent(m.getContent())
 		return m, cmd
+	case WebSocketUpdateMsg:
+		// Just update the UI state based on the message
+		// All connection/retry logic is handled by the client
 	}
 
 	var cmd tea.Cmd
@@ -162,6 +189,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.switched = false
 	}
 	cmds = append(cmds, cmd)
+
+	// Always keep listening for updates
+	cmds = append(cmds, listenForUpdates(m.updateSub))
 
 	return m, tea.Batch(cmds...)
 }
@@ -309,4 +339,15 @@ func (m model) updateViewport() model {
 	m.viewport.KeyMap = modifiedKeyMap
 
 	return m
+}
+
+// Add a command to listen for updates
+func listenForUpdates(sub chan models.Update) tea.Cmd {
+	return func() tea.Msg {
+		update := <-sub
+		return WebSocketUpdateMsg{
+			Type: update.Type,
+			Data: update.Data,
+		}
+	}
 }

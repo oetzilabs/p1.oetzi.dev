@@ -9,6 +9,8 @@ type Dashboard struct {
 	sidebar    *Sidebar
 	mainScreen *MainScreen
 	pjc        *ProjectCollection
+	sc         *ServerCollection
+	bc         *BrokerCollection
 }
 
 type MainScreen struct {
@@ -16,14 +18,19 @@ type MainScreen struct {
 	Content Content
 }
 
-var testProject = NewProject("123", "Test")
-
 func NewDashboard() Dashboard {
 	projectCollection := NewProjectCollection()
-	projectCollection.AddProject(testProject)
+	serverCollection := NewServerCollection()
+	brokerCollection := NewBrokerCollection()
+	projectsTab := NewTab(projectsScreen, "Projects", false, projectCollection)
+	serversTab := NewTab(serversScreen, "Servers", false, serverCollection)
+	brokersTab := NewTab(brokersScreen, "Brokers", false, brokerCollection)
 
 	return Dashboard{
-		sidebar: NewSidebar(NewTab(projectsScreen, "Projects", false, projectCollection),
+		sidebar: NewSidebar(
+			projectsTab,
+			serversTab,
+			brokersTab,
 			NewTab(aboutScreen, "About", false, NewAbout())),
 		mainScreen: &MainScreen{
 			focused: false,

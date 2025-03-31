@@ -5,26 +5,27 @@ import (
 )
 
 type ProjectCollection struct {
-	projects       []*Project
+	projects       []*ProjectView
 	selected       int
 	to_remove      string
 	confirm_delete *Confirmation
+	dialog         *Dialog
 }
 
 func NewProjectCollection() *ProjectCollection {
 	return &ProjectCollection{
-		projects: []*Project{},
+		projects: []*ProjectView{},
 		selected: 0,
 	}
 }
 
-func (pc *ProjectCollection) AddProject(project *Project) {
+func (pc *ProjectCollection) AddProject(project *ProjectView) {
 	pc.projects = append(pc.projects, project)
 }
 
 func (pc *ProjectCollection) SelectProject(id string) {
 	for i, project := range pc.projects {
-		if project.id == id {
+		if project.ID == id {
 			pc.selected = i
 			return
 		}
@@ -33,7 +34,7 @@ func (pc *ProjectCollection) SelectProject(id string) {
 
 func (pc *ProjectCollection) ConfirmRemoveProject(id string) {
 	pc.to_remove = id
-	name := pc.projects[pc.selected].name
+	name := pc.projects[pc.selected].Name
 	confirm := NewConfirmation("Do you really wish to delete"+name+"?", func() {
 		pc.RemoveProject(pc.to_remove)
 	}, func() {
@@ -42,9 +43,19 @@ func (pc *ProjectCollection) ConfirmRemoveProject(id string) {
 	pc.confirm_delete = confirm
 }
 
+func (pc *ProjectCollection) AddProjectDialog() {
+	inputs := []Input{*NewInput("ID", "123"), *NewInput("Name", "My Project")}
+	dialog := NewDialog("Enter the name of the project", func(values ...string) {
+		pc.AddProject(NewProject(values[0], values[1]))
+	}, func() {
+		pc.dialog = nil
+	}, inputs...)
+	pc.dialog = dialog
+}
+
 func (pc *ProjectCollection) RemoveProject(id string) {
 	for i, project := range pc.projects {
-		if project.id == id {
+		if project.ID == id {
 			pc.projects = append(pc.projects[:i], pc.projects[i+1:]...)
 			return
 		}
@@ -57,13 +68,11 @@ func (pc *ProjectCollection) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "n":
-			// New project
-			pid := "123"
-			pc.AddProject(NewProject(pid, "Test"))
-			pc.SelectProject(pid)
+			// TODO: New project dialog window
+			pc.AddProjectDialog()
 		case "d":
 			// confirm project deletion
-			pc.ConfirmRemoveProject(pc.projects[pc.selected].id)
+			pc.ConfirmRemoveProject(pc.projects[pc.selected].ID)
 		}
 	}
 	var cmd tea.Cmd
