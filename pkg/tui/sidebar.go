@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -8,10 +10,11 @@ import (
 )
 
 type Sidebar struct {
-	tabs      []Tab
-	activeTab int
-	focused   bool
-	search    textinput.Model
+	tabs         []Tab
+	activeTab    int
+	focused      bool
+	search       textinput.Model
+	tabsToRender []Tab
 }
 
 func NewSidebar(tabs ...Tab) *Sidebar {
@@ -19,19 +22,55 @@ func NewSidebar(tabs ...Tab) *Sidebar {
 	ti.Placeholder = "Search"
 
 	return &Sidebar{
-		tabs:      tabs,
-		activeTab: 0,
-		focused:   true,
-		search:    ti,
+		tabs:         tabs,
+		activeTab:    0,
+		focused:      true,
+		search:       ti,
+		tabsToRender: tabs,
+	}
+}
+
+func filterTabs(tabs []Tab, search string) []Tab {
+	var tabsToRender []Tab
+	for _, tab := range tabs {
+		display := strings.ToLower(tab.Display())
+		search := strings.ToLower(search)
+		if strings.Contains(display, search) {
+			tabsToRender = append(tabsToRender, tab)
+		}
+	}
+	return tabsToRender
+}
+
+func (s *Sidebar) ViewSelectedTabContent() string {
+	if len(s.tabsToRender) == 0 {
+		return "No tabs found"
+	}
+
+	if s.tabsToRender[s.activeTab].ID == s.tabsToRender[s.activeTab].ID {
+		return s.tabsToRender[s.activeTab].Content.View()
+	} else {
+		return "Please select a tab"
 	}
 }
 
 func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
 
-	tab := s.tabs[s.activeTab]
-	tabCmd := tab.Update(msg)
 	tiM, cmd := s.search.Update(msg)
 	s.search = tiM
+
+	s.tabsToRender = filterTabs(
+		s.tabs,
+		s.search.Value(),
+	)
+
+	if len(s.tabsToRender) == 0 {
+		s.activeTab = 0
+		return cmd
+	}
+
+	tab := s.tabsToRender[s.activeTab]
+	tabCmd := tab.Update(msg)
 	cmd = tea.Batch(cmd, tabCmd)
 
 	switch msg := msg.(type) {
@@ -47,7 +86,7 @@ func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
 			}
 		case "j":
 			// Move down in sidebar
-			if !s.search.Focused() && s.activeTab < len(s.tabs)-1 && s.focused {
+			if !s.search.Focused() && s.activeTab < len(s.tabsToRender)-1 && s.focused {
 				s.activeTab++
 			}
 		case "k":
@@ -73,7 +112,7 @@ func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
 
 // Sidebar's View method
 func (s *Sidebar) View() string {
-	paddedStyle := lipgloss.NewStyle().PaddingLeft(2)
+	paddedStyle := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 
 	selectedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true)
 	inactiveSelectedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("244")).Bold(true)
@@ -83,12 +122,12 @@ func (s *Sidebar) View() string {
 
 	sidebar += s.search.View() + "\n"
 
-	for _, tab := range s.tabs {
+	for _, tab := range s.tabsToRender {
 		if tab.Hidden {
 			continue
 		}
 
-		if s.tabs[s.activeTab].ID == tab.ID {
+		if s.tabsToRender[s.activeTab].ID == tab.ID {
 			if s.focused {
 				sidebar += selectedStyle.Render("▶ "+tab.Display()) + "\n"
 			} else {

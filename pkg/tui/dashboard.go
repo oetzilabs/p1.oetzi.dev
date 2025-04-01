@@ -36,7 +36,7 @@ func (m model) DashboardUpdate(msg tea.Msg) (model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q":
+		case "ctrl+c":
 			return m, tea.Quit
 		}
 	}
@@ -49,9 +49,7 @@ func (m model) DashboardView() string {
 
 	sidebarBox := m.dashboard.sidebar.SidebarView(m)
 
-	contentBox := mainScreenStyle.Width(m.widthContainer - 21).Height(m.heightContainer).Render(
-		m.dashboard.sidebar.tabs[m.dashboard.sidebar.activeTab].Content.View(),
-	)
+	contentBox := mainScreenStyle.Width(m.widthContainer - 21).Height(m.heightContainer).Render(m.dashboard.sidebar.ViewSelectedTabContent())
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, sidebarBox, contentBox)
 }
