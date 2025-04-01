@@ -6,10 +6,9 @@ import (
 
 // Tab represents a tab in the sidebar
 type Tab struct {
-	ID         string
-	Hidden     bool
-	TabDisplay string
-	Content    Content
+	ID      string
+	Hidden  bool
+	Content Content
 }
 
 type UpdateTabDisplay struct {
@@ -18,11 +17,10 @@ type UpdateTabDisplay struct {
 }
 
 // NewTab creates a new tab
-func NewTab(id string, name string, content Content) Tab {
+func NewTab(id string, content Content) Tab {
 	return Tab{
-		ID:         id,
-		Content:    content,
-		TabDisplay: name,
+		ID:      id,
+		Content: content,
 	}
 }
 
@@ -33,12 +31,16 @@ func (t *Tab) Update(msg tea.Msg) tea.Cmd {
 	}
 
 	cmd := t.Content.Update(msg)
-	t.TabDisplay = t.Content.View()
 
 	return cmd
 }
 
 // View returns the tab's view
 func (t *Tab) View() string {
-	return t.TabDisplay
+	return t.Content.View()
+}
+
+// View returns the tab's view
+func (t *Tab) Display() string {
+	return t.Content.Display()
 }

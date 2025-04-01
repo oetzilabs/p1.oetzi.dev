@@ -18,3 +18,7 @@ func (a *About) Update(msg tea.Msg) tea.Cmd {
 func (a *About) View() string {
 	return "About Content"
 }
+
+func (a *About) Display() string {
+	return "About"
+}

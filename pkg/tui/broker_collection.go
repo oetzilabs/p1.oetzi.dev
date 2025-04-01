@@ -122,9 +122,19 @@ func (bc *BrokerCollection) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (bc *BrokerCollection) View() string {
+	if len(bc.brokers) == 0 {
+		return "No brokers available. Press 'n' to add a new broker."
+	}
 	content := bc.brokers[bc.selected].View()
 	if bc.to_remove != "" {
 		content += bc.confirm_delete.View()
 	}
 	return content
+}
+
+func (bc *BrokerCollection) Display() string {
+	if len(bc.brokers) == 0 {
+		return "Brokers"
+	}
+	return fmt.Sprintf("Brokers (%d)", len(bc.brokers))
 }
