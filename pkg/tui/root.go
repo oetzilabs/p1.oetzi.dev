@@ -3,7 +3,6 @@ package tui
 import (
 	"context"
 	"errors"
-	"math"
 
 	"p1/pkg/client"
 	"p1/pkg/models"
@@ -136,11 +135,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case m.viewportWidth < 75:
 			m.size = medium
 			m.widthContainer = 50
-			m.heightContainer = int(math.Min(float64(msg.Height), 30))
+			m.heightContainer = msg.Height - 2 // Leave some margin
 		default:
 			m.size = large
 			m.widthContainer = 75
-			m.heightContainer = int(math.Min(float64(msg.Height), 30))
+			m.heightContainer = msg.Height - 2 // Leave some margin
 		}
 
 		m.widthContent = m.widthContainer - 4

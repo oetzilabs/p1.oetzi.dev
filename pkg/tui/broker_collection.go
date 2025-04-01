@@ -1,6 +1,12 @@
 package tui
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"fmt"
+	"reflect"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/google/uuid"
+)
 
 type BrokerCollection struct {
 	brokers        []*BrokerView
@@ -41,12 +47,40 @@ func (bc *BrokerCollection) ConfirmRemoveBroker(id string) {
 }
 
 func (bc *BrokerCollection) AddBrokerDialog() {
-	inputs := []Input{*NewInput("ID", "123"), *NewInput("Name", "My Broker"), *NewInput("URL", "mqtt://example.com")}
-	dialog := NewDialog("Enter the broker details", func(values ...string) {
-		bc.AddBroker(NewBroker(values[0], values[1], values[2]))
-	}, func() {
-		bc.dialog = nil
-	}, inputs...)
+	inputs := []Input{
+		*NewInput(
+			"Name",
+			"",
+			&InputOptions{
+				Focused:     true,
+				Disabled:    false,
+				Placeholder: "Broker Name",
+			},
+		),
+		*NewInput(
+			"URL",
+			"",
+			&InputOptions{
+				Focused:     false,
+				Disabled:    false,
+				Placeholder: "mqtt://example.com",
+			},
+		),
+	}
+	dialog := NewDialog(
+		"Enter the broker details",
+		inputs,
+		func(values interface{}) {
+			v := reflect.ValueOf(values)
+			name := v.FieldByName("Name").String()
+			url := v.FieldByName("URL").String()
+			bc.AddBroker(NewBroker(uuid.NewString(), name, url))
+			bc.dialog = nil
+		},
+		func() {
+			bc.dialog = nil
+		},
+	)
 	bc.dialog = dialog
 }
 
@@ -75,6 +109,15 @@ func (bc *BrokerCollection) Update(msg tea.Msg) tea.Cmd {
 	if len(bc.brokers) > 0 {
 		cmd = tea.Batch(bc.brokers[bc.selected].Update(parentMsg), cmd)
 	}
+
+	// Send display information up to parent
+	updateCmd := tea.Cmd(func() tea.Msg {
+		return UpdateTabDisplay{
+			DisplayLeft:  "Brokers",
+			DisplayRight: []string{fmt.Sprintf("(%d)", len(bc.brokers))},
+		}
+	})
+	cmd = tea.Batch(cmd, updateCmd)
 	return cmd
 }
 

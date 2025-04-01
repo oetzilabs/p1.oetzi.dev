@@ -1,6 +1,11 @@
 package tui
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"fmt"
+	"reflect"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type ServerCollection struct {
 	servers        []*ServerView
@@ -41,12 +46,26 @@ func (sc *ServerCollection) ConfirmRemoveProject(id string) {
 }
 
 func (sc *ServerCollection) AddServerDialog() {
-	inputs := []Input{*NewInput("ID", "123"), *NewInput("Name", "My Project"), *NewInput("URL", "https://example.com")}
-	dialog := NewDialog("Enter the name of the project", func(values ...string) {
-		sc.AddServer(NewServer(values[0], values[1], values[2]))
-	}, func() {
-		sc.dialog = nil
-	}, inputs...)
+	inputs := []Input{
+		*NewInput("ID", "123", nil),
+		*NewInput("Name", "My Project", nil),
+		*NewInput("URL", "https://example.com", nil),
+	}
+	dialog := NewDialog(
+		"Enter the name of the project",
+		inputs,
+		func(values interface{}) {
+			v := reflect.ValueOf(values)
+			id := v.FieldByName("ID").String()
+			name := v.FieldByName("Name").String()
+			url := v.FieldByName("URL").String()
+			sc.AddServer(NewServer(id, name, url))
+			sc.dialog = nil
+		},
+		func() {
+			sc.dialog = nil
+		},
+	)
 	sc.dialog = dialog
 }
 
@@ -75,6 +94,15 @@ func (sc *ServerCollection) Update(msg tea.Msg) tea.Cmd {
 	if len(sc.servers) > 0 {
 		cmd = tea.Batch(sc.servers[sc.selected].Update(parentMsg), cmd)
 	}
+
+	// Send display information up to parent
+	updateCmd := tea.Cmd(func() tea.Msg {
+		return UpdateTabDisplay{
+			DisplayLeft:  "Servers",
+			DisplayRight: []string{fmt.Sprintf("(%d)", len(sc.servers))},
+		}
+	})
+	cmd = tea.Batch(cmd, updateCmd)
 	return cmd
 }
 
