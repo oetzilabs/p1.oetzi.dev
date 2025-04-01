@@ -16,18 +16,10 @@ import (
 
 type page = int
 type size = int
-type screen = int
 
 const (
 	splashPage page = iota
 	dashboardPage
-)
-
-const (
-	projectsScreen screen = iota
-	serversScreen
-	brokersScreen
-	aboutScreen
 )
 
 const (
@@ -43,7 +35,7 @@ type model struct {
 	hasScroll       bool
 	renderer        *lipgloss.Renderer
 	page            page
-	dashboard       Dashboard
+	dashboard       *Dashboard
 	cursor          Cursor
 	splash          Splash
 	context         context.Context

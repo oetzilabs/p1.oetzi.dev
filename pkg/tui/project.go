@@ -4,6 +4,7 @@ import (
 	"p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type ProjectView struct {
@@ -25,6 +26,6 @@ func (p *ProjectView) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (p *ProjectView) View() string {
-	var content string = "Project Content"
-	return content
+	mainStyle := lipgloss.NewStyle().Padding(2)
+	return mainStyle.Render(p.Name)
 }

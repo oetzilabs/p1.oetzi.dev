@@ -20,3 +20,7 @@ func (e *EmptyContent) View() string {
 	var content string = ""
 	return content
 }
+
+func (e *EmptyContent) Display() string {
+	return ""
+}

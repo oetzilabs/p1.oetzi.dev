@@ -107,9 +107,19 @@ func (sc *ServerCollection) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (sc *ServerCollection) View() string {
+	if len(sc.servers) == 0 {
+		return "No servers available. Press 'n' to add a new server."
+	}
 	content := sc.servers[sc.selected].View()
 	if sc.to_remove != "" {
 		content += sc.confirm_delete.View()
 	}
 	return content
+}
+
+func (sc *ServerCollection) Display() string {
+	if len(sc.servers) == 0 {
+		return "Servers"
+	}
+	return fmt.Sprintf("Servers (%d)", len(sc.servers))
 }
