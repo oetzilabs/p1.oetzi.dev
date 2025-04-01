@@ -22,21 +22,23 @@ func NewDashboard() Dashboard {
 	projectCollection := NewProjectCollection()
 	serverCollection := NewServerCollection()
 	brokerCollection := NewBrokerCollection()
-	projectsTab := NewTab(projectsScreen, "Projects", false, projectCollection)
-	serversTab := NewTab(serversScreen, "Servers", false, serverCollection)
-	brokersTab := NewTab(brokersScreen, "Brokers", false, brokerCollection)
+	projectsTab := NewTab("projects", "Projects", projectCollection)
+	serversTab := NewTab("servers", "Servers", serverCollection)
+	brokersTab := NewTab("brokers", "Brokers", brokerCollection)
 
 	return Dashboard{
 		sidebar: NewSidebar(
 			projectsTab,
 			serversTab,
 			brokersTab,
-			NewTab(aboutScreen, "About", false, NewAbout())),
+			NewTab("about", "About", NewAbout())),
 		mainScreen: &MainScreen{
 			focused: false,
 			Content: NewEmptyContent(),
 		},
 		pjc: projectCollection,
+		sc:  serverCollection,
+		bc:  brokerCollection,
 	}
 }
 
@@ -68,13 +70,15 @@ func (m model) DashboardUpdate(msg tea.Msg) (model, tea.Cmd) {
 			// Focus on main screen
 			m.dashboard.mainScreen.focused = true
 			m.dashboard.sidebar.focused = false
-		case "ctrl+k":
+		case "ctrl+shift+k":
 			// Return to sidebar
 			m.dashboard.mainScreen.focused = false
 			m.dashboard.sidebar.focused = true
 		}
 	}
-	cmd := tea.Batch(m.dashboard.mainScreen.Content.Update(parentMsg), m.dashboard.sidebar.Update(parentMsg))
+	cmd := m.dashboard.mainScreen.Content.Update(parentMsg)
+	cmd2 := m.dashboard.sidebar.Update(parentMsg)
+	cmd = tea.Batch(cmd, cmd2)
 
 	return m, cmd
 }

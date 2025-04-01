@@ -20,13 +20,17 @@ func NewSidebar(tabs ...Tab) *Sidebar {
 }
 
 func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
-	var cmd tea.Cmd
-	for _, t := range s.tabs {
-		if t.ID == s.activeTab {
-			cmd = tea.Batch(cmd, t.Content.Update(msg))
+	var cmds []tea.Cmd
+
+	for i := range s.tabs {
+		// Update both the tab and its content
+		if cmd := s.tabs[i].Update(msg); cmd != nil {
+			cmds = append(cmds, cmd)
 		}
+
 	}
-	return cmd
+
+	return tea.Batch(cmds...)
 }
 
 // Sidebar's View method
@@ -40,14 +44,15 @@ func (s *Sidebar) View() string {
 		if t.Hidden {
 			continue
 		}
+
 		if s.tabs[s.activeTab].ID == t.ID {
 			if s.focused {
-				sidebar += selectedStyle.Render("▶ "+t.Name) + "\n"
+				sidebar += selectedStyle.Render("▶ "+t.View()) + "\n"
 			} else {
-				sidebar += inactiveSelectedStyle.Render("▶ "+t.Name) + "\n"
+				sidebar += inactiveSelectedStyle.Render("▶ "+t.View()) + "\n"
 			}
 		} else {
-			sidebar += sidebarStyle.Render(t.Name) + "\n"
+			sidebar += sidebarStyle.Render(t.View()) + "\n"
 		}
 	}
 	return sidebar
@@ -56,9 +61,8 @@ func (s *Sidebar) View() string {
 func (s *Sidebar) SidebarView(m model) string {
 	borderStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder()).BorderRight(true)
 
-	sidebarBox := borderStyle.Width(20).Height(m.heightContainer).Render(
-		m.dashboard.sidebar.View(),
-	)
+	sidebarContent := s.View()
+	sidebarBox := borderStyle.Width(20).Height(m.heightContainer).Render(sidebarContent)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, sidebarBox)
 }

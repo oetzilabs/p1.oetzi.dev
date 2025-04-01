@@ -5,15 +5,38 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type Input struct {
-	Label string
-	Value string
+type InputOptions struct {
+	Focused     bool
+	Disabled    bool
+	Placeholder string
 }
 
-func NewInput(label string, value string) *Input {
+type Input struct {
+	Label   string
+	Value   string
+	Options InputOptions
+}
+
+// DefaultInputOptions returns the default options for an input
+func DefaultInputOptions() InputOptions {
+	return InputOptions{
+		Focused:     false,
+		Disabled:    false,
+		Placeholder: "",
+	}
+}
+
+// NewInput creates a new input with optional options
+// If options is nil, default options will be used
+func NewInput(label string, value string, options *InputOptions) *Input {
+	opts := DefaultInputOptions()
+	if options != nil {
+		opts = *options
+	}
 	return &Input{
-		Label: label,
-		Value: value,
+		Label:   label,
+		Value:   value,
+		Options: opts,
 	}
 }
 

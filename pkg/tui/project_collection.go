@@ -1,10 +1,14 @@
 package tui
 
 import (
+	"reflect"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/google/uuid"
 )
 
 type ProjectCollection struct {
+	display        string
 	projects       []*ProjectView
 	selected       int
 	to_remove      string
@@ -44,12 +48,26 @@ func (pc *ProjectCollection) ConfirmRemoveProject(id string) {
 }
 
 func (pc *ProjectCollection) AddProjectDialog() {
-	inputs := []Input{*NewInput("ID", "123"), *NewInput("Name", "My Project")}
-	dialog := NewDialog("Enter the name of the project", func(values ...string) {
-		pc.AddProject(NewProject(values[0], values[1]))
-	}, func() {
-		pc.dialog = nil
-	}, inputs...)
+	inputs := []Input{
+		*NewInput("Name", "", &InputOptions{
+			Focused:     true,
+			Disabled:    false,
+			Placeholder: "Project Name",
+		}),
+	}
+	dialog := NewDialog(
+		"Enter the name of the project",
+		inputs,
+		func(values interface{}) {
+			v := reflect.ValueOf(values)
+			name := v.FieldByName("Name").String()
+			pc.AddProject(NewProject(uuid.NewString(), name))
+			pc.dialog = nil
+		},
+		func() {
+			pc.dialog = nil
+		},
+	)
 	pc.dialog = dialog
 }
 
@@ -81,12 +99,19 @@ func (pc *ProjectCollection) Update(msg tea.Msg) tea.Cmd {
 	}
 
 	if len(pc.projects) > 0 {
-		cmd = tea.Batch(pc.projects[pc.selected].Update(parentMsg), cmd)
+		cmd = tea.Batch(
+			cmd,
+			pc.projects[pc.selected].Update(parentMsg),
+		)
 	}
+
 	return cmd
 }
 
 func (pc *ProjectCollection) View() string {
+	if len(pc.projects) == 0 {
+		return "No projects available. Press 'n' to add a new project."
+	}
 	content := pc.projects[pc.selected].View()
 	if pc.to_remove != "" {
 		content += pc.confirm_delete.View()
