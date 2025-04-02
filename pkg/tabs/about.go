@@ -7,7 +7,7 @@ type AboutTab struct{}
 func NewAboutTab() Tab {
 	return Tab{
 		ID:      "about",
-		Group:   TabGroupsBottom,
+		Group:   AlignBottom,
 		Hidden:  false,
 		Content: &AboutTab{},
 	}

@@ -15,7 +15,7 @@ func NewBrokersTab() Tab {
 	return Tab{
 		ID:     "brokers",
 		Hidden: false,
-		Group:  TabGroupsMain,
+		Group:  AlignTop,
 		Content: &BrokersTab{
 			collection: collections.NewBrokerCollection(),
 		},

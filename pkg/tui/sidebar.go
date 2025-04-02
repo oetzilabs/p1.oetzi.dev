@@ -17,6 +17,7 @@ type Sidebar struct {
 	focused      bool
 	search       textinput.Model
 	tabsToRender []tabs.Tab
+	width        int
 }
 
 type Tabs = []tabs.Tab
@@ -31,6 +32,7 @@ func NewSidebar(tabs ...tabs.Tab) *Sidebar {
 		focused:      true,
 		search:       ti,
 		tabsToRender: tabs,
+		width:        30,
 	}
 }
 
@@ -38,6 +40,10 @@ func filterTabs(tabs Tabs, search string) Tabs {
 	var tabsToRender Tabs
 	for _, tab := range tabs {
 		display := strings.ToLower(tab.Display())
+		if len(display) == 0 {
+			continue
+		}
+
 		search := strings.ToLower(search)
 		if strings.Contains(display, search) {
 			tabsToRender = append(tabsToRender, tab)
@@ -60,6 +66,11 @@ func (s *Sidebar) ViewSelectedTabContent() string {
 
 	if len(s.tabsToRender) == 0 {
 		return "No tabs found"
+	}
+
+	content := s.tabsToRender[s.activeTab].Content
+	if content == nil {
+		return "No content found"
 	}
 
 	return s.tabsToRender[s.activeTab].Content.View()
@@ -107,9 +118,10 @@ func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
 
 		case "enter", "tab":
 			// unfocus sidebar
-			if !s.search.Focused() {
-				s.focused = false
+			if s.search.Focused() {
+				s.search.Blur()
 			}
+			s.focused = true
 		case "ctrl+k":
 			// Return to sidebar
 			if !s.search.Focused() {
@@ -132,10 +144,8 @@ func (s *Sidebar) View() string {
 
 	sidebar += s.search.View() + "\n\n"
 
-	availableWidth := 30
-
-	mainTabs := filterTabsGroup(s.tabsToRender, tabs.TabGroupsMain)
-	bottomTabs := filterTabsGroup(s.tabsToRender, tabs.TabGroupsBottom)
+	mainTabs := filterTabsGroup(s.tabsToRender, tabs.AlignTop)
+	bottomTabs := filterTabsGroup(s.tabsToRender, tabs.AlignBottom)
 
 	for _, tab := range mainTabs {
 		if tab.Hidden {
@@ -143,8 +153,8 @@ func (s *Sidebar) View() string {
 		}
 		display := tab.Display()
 
-		if len(display) > availableWidth {
-			display = display[:availableWidth] + "..."
+		if len(display) > s.width {
+			display = display[:s.width] + "..."
 		}
 
 		if s.tabsToRender[s.activeTab].ID == tab.ID {
@@ -158,7 +168,7 @@ func (s *Sidebar) View() string {
 		}
 	}
 
-	sidebar += "__FILLER_VERTICAL__"
+	sidebar += "__FILLER_VERTICAL__\n"
 
 	for _, tab := range bottomTabs {
 		if tab.Hidden {
@@ -166,8 +176,8 @@ func (s *Sidebar) View() string {
 		}
 		display := tab.Display()
 
-		if len(display) > availableWidth {
-			display = display[:availableWidth] + "..."
+		if len(display) > s.width {
+			display = display[:s.width] + "..."
 		}
 
 		if s.tabsToRender[s.activeTab].ID == tab.ID {
@@ -185,20 +195,43 @@ func (s *Sidebar) View() string {
 }
 
 func (s *Sidebar) SidebarView(m model) string {
-	// Replace filler string with spaces
-	filler := "__FILLER__"
-	replacement := " " // Single space
 	original := s.View()
-	// Create the replacement string with the correct number of spaces
-	fillerWidth := max(0, 29-(lipgloss.Width(original)-lipgloss.Width(filler)))
-	newString := strings.ReplaceAll(original, filler, strings.Repeat(replacement, fillerWidth))
+	sidebarWidth := m.dashboard.sidebar.width
+	viewportHeight := m.viewportHeight
 
-	// Replace filler string with spaces, so that we fill the vertical space
-	fillerVertical := "__FILLER_VERTICAL__"
-	replacementVertical := "\n" // Single space
-	fillerVerticalHeight := (m.viewportHeight) - lipgloss.Height(newString)
+	lines := strings.Split(original, "\n")
+	var processedLines []string
 
-	newStringVertical := strings.ReplaceAll(newString, fillerVertical, strings.Repeat(replacementVertical, fillerVerticalHeight))
+	for _, line := range lines {
+		fillerIndex := strings.Index(line, "__FILLER__")
+		if fillerIndex != -1 {
+			// Extract content before and after the filler
+			contentBeforeFiller := line[:fillerIndex]
+			contentAfterFiller := line[fillerIndex+len("__FILLER__"):]
 
-	return lipgloss.NewStyle().Background(lipgloss.Color("#111111")).Width(30).Height(m.viewportHeight).Render(newStringVertical)
+			// Calculate space needed for this specific line
+			widthBeforeFiller := lipgloss.Width(contentBeforeFiller)
+			spaceNeeded := max(0, sidebarWidth-widthBeforeFiller-lipgloss.Width(contentAfterFiller))
+			horizontalSpace := strings.Repeat(" ", spaceNeeded)
+
+			// Construct the new line
+			line = contentBeforeFiller + horizontalSpace + contentAfterFiller
+		}
+		processedLines = append(processedLines, line)
+	}
+
+	// Join the lines back together
+	content := strings.Join(processedLines, "\n")
+	content = lipgloss.JoinHorizontal(lipgloss.Top, content)
+
+	// Vertical spacing
+	verticalFillerHeight := viewportHeight - lipgloss.Height(content)
+	verticalSpace := strings.Repeat("\n", verticalFillerHeight)
+	finalContent := strings.ReplaceAll(content, "__FILLER_VERTICAL__", verticalSpace)
+
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color("#111111")).
+		Width(30).
+		Height(viewportHeight).
+		Render(finalContent)
 }

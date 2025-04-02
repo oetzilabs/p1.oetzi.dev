@@ -15,7 +15,7 @@ func NewProjectsTab() Tab {
 	return Tab{
 		ID:     "projects",
 		Hidden: false,
-		Group:  TabGroupsMain,
+		Group:  AlignTop,
 		Content: &ProjectsTab{
 			collection: collections.NewProjectCollection(),
 		},

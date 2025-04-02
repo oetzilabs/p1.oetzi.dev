@@ -10,7 +10,7 @@ func NewExitTab() Tab {
 	return Tab{
 		ID:      "exit",
 		Hidden:  false,
-		Group:   TabGroupsBottom,
+		Group:   AlignBottom,
 		Content: &ExitTab{},
 	}
 }

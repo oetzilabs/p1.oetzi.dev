@@ -15,7 +15,7 @@ func NewServersTab() Tab {
 	return Tab{
 		ID:     "servers",
 		Hidden: false,
-		Group:  TabGroupsMain,
+		Group:  AlignTop,
 		Content: &ServersTab{
 			collection: collections.NewServerCollection(),
 		},

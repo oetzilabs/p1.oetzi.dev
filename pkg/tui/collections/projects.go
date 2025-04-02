@@ -73,5 +73,5 @@ func (pc *Projects) View() string {
 
 func (pc *Projects) Display() string {
 	style := lipgloss.NewStyle()
-	return style.Render(lipgloss.JoinHorizontal(lipgloss.Left, "Projects", "__FILLER__", fmt.Sprintf("(%d)", len(pc.projects))))
+	return lipgloss.JoinHorizontal(lipgloss.Left, style.Render("Projects", "__FILLER__", fmt.Sprintf("(%d)", len(pc.projects))))
 }

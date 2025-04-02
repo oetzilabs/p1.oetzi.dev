@@ -53,9 +53,9 @@ func (m model) DashboardUpdate(msg tea.Msg) (model, tea.Cmd) {
 
 func (m model) DashboardView() string {
 	sidebarBox := m.dashboard.sidebar.SidebarView(m)
-	paddedStyle := lipgloss.NewStyle().Padding(1).Border(lipgloss.NormalBorder())
+	paddedStyle := lipgloss.NewStyle().Padding(1)
 
-	contentBox := paddedStyle.Width(m.widthContainer - 31).Height(m.heightContainer).Render(m.dashboard.sidebar.ViewSelectedTabContent())
+	contentBox := paddedStyle.Width(m.widthContainer - m.dashboard.sidebar.width).Height(m.heightContainer).Render(m.dashboard.sidebar.ViewSelectedTabContent())
 
 	return lipgloss.JoinHorizontal(lipgloss.Left, sidebarBox, contentBox)
 }
