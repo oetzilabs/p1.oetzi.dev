@@ -231,7 +231,7 @@ func (s *Sidebar) SidebarView(m model) string {
 
 	return lipgloss.NewStyle().
 		Background(lipgloss.Color("#111111")).
-		Width(30).
+		Width(s.width).
 		Height(viewportHeight).
 		Render(finalContent)
 }
