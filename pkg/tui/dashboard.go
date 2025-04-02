@@ -12,11 +12,12 @@ type Dashboard struct {
 }
 
 func NewDashboard() *Dashboard {
+	// main
 	projectsTab := tabs.NewProjectsTab()
 	serversTab := tabs.NewServersTab()
 	brokersTab := tabs.NewBrokersTab()
-	// serversTab := NewTab("servers", NewServerCollection())
-	// brokersTab := NewTab("brokers", NewBrokerCollection())
+
+	// bottom
 	aboutTab := tabs.NewAboutTab()
 	exitTab := tabs.NewExitTab()
 

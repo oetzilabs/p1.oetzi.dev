@@ -13,8 +13,9 @@ type BrokersTab struct {
 func NewBrokersTab() Tab {
 
 	return Tab{
-		ID:     "Brokers",
+		ID:     "brokers",
 		Hidden: false,
+		Group:  TabGroupsMain,
 		Content: &BrokersTab{
 			collection: collections.NewBrokerCollection(),
 		},

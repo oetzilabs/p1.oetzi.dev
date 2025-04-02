@@ -46,6 +46,16 @@ func filterTabs(tabs Tabs, search string) Tabs {
 	return tabsToRender
 }
 
+func filterTabsGroup(tabs Tabs, group tabs.TabGroup) Tabs {
+	var tabsToRender Tabs
+	for _, tab := range tabs {
+		if tab.Group == group {
+			tabsToRender = append(tabsToRender, tab)
+		}
+	}
+	return tabsToRender
+}
+
 func (s *Sidebar) ViewSelectedTabContent() string {
 
 	if len(s.tabsToRender) == 0 {
@@ -124,7 +134,33 @@ func (s *Sidebar) View() string {
 
 	availableWidth := 30
 
-	for _, tab := range s.tabsToRender {
+	mainTabs := filterTabsGroup(s.tabsToRender, tabs.TabGroupsMain)
+	bottomTabs := filterTabsGroup(s.tabsToRender, tabs.TabGroupsBottom)
+
+	for _, tab := range mainTabs {
+		if tab.Hidden {
+			continue
+		}
+		display := tab.Display()
+
+		if len(display) > availableWidth {
+			display = display[:availableWidth] + "..."
+		}
+
+		if s.tabsToRender[s.activeTab].ID == tab.ID {
+			if s.focused {
+				sidebar += selectedStyle.Render("▶ "+display) + "\n"
+			} else {
+				sidebar += inactiveSelectedStyle.Render("▶ "+display) + "\n"
+			}
+		} else {
+			sidebar += sidebarStyle.Render(display) + "\n"
+		}
+	}
+
+	sidebar += "__FILLER_VERTICAL__"
+
+	for _, tab := range bottomTabs {
 		if tab.Hidden {
 			continue
 		}
@@ -156,5 +192,13 @@ func (s *Sidebar) SidebarView(m model) string {
 	// Create the replacement string with the correct number of spaces
 	fillerWidth := max(0, 29-(lipgloss.Width(original)-lipgloss.Width(filler)))
 	newString := strings.ReplaceAll(original, filler, strings.Repeat(replacement, fillerWidth))
-	return lipgloss.NewStyle().Background(lipgloss.Color("#111111")).Width(30).Height(m.viewportHeight).Render(newString)
+
+	// Replace filler string with spaces, so that we fill the vertical space
+	fillerVertical := "__FILLER_VERTICAL__"
+	replacementVertical := "\n" // Single space
+	fillerVerticalHeight := m.viewportHeight - lipgloss.Height(newString)
+
+	newStringVertical := strings.ReplaceAll(newString, fillerVertical, strings.Repeat(replacementVertical, fillerVerticalHeight))
+
+	return lipgloss.NewStyle().Background(lipgloss.Color("#111111")).Width(30).Height(m.viewportHeight).Render(newStringVertical)
 }

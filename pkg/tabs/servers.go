@@ -13,8 +13,9 @@ type ServersTab struct {
 func NewServersTab() Tab {
 
 	return Tab{
-		ID:     "Servers",
+		ID:     "servers",
 		Hidden: false,
+		Group:  TabGroupsMain,
 		Content: &ServersTab{
 			collection: collections.NewServerCollection(),
 		},

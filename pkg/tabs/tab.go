@@ -10,6 +10,7 @@ import (
 type Tab struct {
 	ID      string
 	Hidden  bool
+	Group   TabGroup
 	Content interfaces.Content
 }
 
