@@ -2,28 +2,29 @@ package tui
 
 import (
 	"fmt"
+	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type BrokerCollection struct {
-	brokers  []*BrokerView
+	brokers  []*models.Broker
 	selected int
 }
 
 func NewBrokerCollection() *BrokerCollection {
 	return &BrokerCollection{
-		brokers: []*BrokerView{},
+		brokers: []*models.Broker{},
 	}
 }
 
-func (bc *BrokerCollection) AddBroker(broker *BrokerView) {
+func (bc *BrokerCollection) AddBroker(broker *models.Broker) {
 	bc.brokers = append(bc.brokers, broker)
 }
 
 func (bc *BrokerCollection) SelectBroker(id string) {
 	for i, broker := range bc.brokers {
-		if broker.Id == id {
+		if broker.ID == id {
 			bc.selected = i
 			return
 		}
@@ -32,7 +33,7 @@ func (bc *BrokerCollection) SelectBroker(id string) {
 
 func (bc *BrokerCollection) RemoveBroker(id string) {
 	for i, broker := range bc.brokers {
-		if broker.Id == id {
+		if broker.ID == id {
 			bc.brokers = append(bc.brokers[:i], bc.brokers[i+1:]...)
 			return
 		}

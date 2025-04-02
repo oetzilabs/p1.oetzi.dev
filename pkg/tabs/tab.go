@@ -1,6 +1,8 @@
-package tui
+package tabs
 
 import (
+	interfaces "p1/pkg/interfaces"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -8,7 +10,7 @@ import (
 type Tab struct {
 	ID      string
 	Hidden  bool
-	Content Content
+	Content interfaces.Content
 }
 
 type UpdateTabDisplay struct {
@@ -17,7 +19,7 @@ type UpdateTabDisplay struct {
 }
 
 // NewTab creates a new tab
-func NewTab(id string, content Content) Tab {
+func NewTab(id string, content interfaces.Content) Tab {
 	return Tab{
 		ID:      id,
 		Content: content,
@@ -30,13 +32,15 @@ func (t *Tab) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	cmd := t.Content.Update(msg)
-
-	return cmd
+	return t.Content.Update(msg)
 }
 
 // View returns the tab's view
 func (t *Tab) View() string {
+	if t.Content == nil {
+		return "No Content Set - This should not happen."
+	}
+
 	return t.Content.View()
 }
 

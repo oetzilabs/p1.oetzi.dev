@@ -2,28 +2,29 @@ package tui
 
 import (
 	"fmt"
+	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type ServerCollection struct {
-	servers  []*ServerView
+	servers  []*models.Server
 	selected int
 }
 
 func NewServerCollection() *ServerCollection {
 	return &ServerCollection{
-		servers: []*ServerView{},
+		servers: []*models.Server{},
 	}
 }
 
-func (sc *ServerCollection) AddServer(server *ServerView) {
+func (sc *ServerCollection) AddServer(server *models.Server) {
 	sc.servers = append(sc.servers, server)
 }
 
 func (sc *ServerCollection) SelectServer(id string) {
 	for i, server := range sc.servers {
-		if server.Id == id {
+		if server.ID == id {
 			sc.selected = i
 			return
 		}
@@ -32,7 +33,7 @@ func (sc *ServerCollection) SelectServer(id string) {
 
 func (sc *ServerCollection) RemoveServer(id string) {
 	for i, server := range sc.servers {
-		if server.Id == id {
+		if server.ID == id {
 			sc.servers = append(sc.servers[:i], sc.servers[i+1:]...)
 			return
 		}

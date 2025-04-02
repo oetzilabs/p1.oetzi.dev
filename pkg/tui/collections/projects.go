@@ -2,27 +2,29 @@ package tui
 
 import (
 	"fmt"
+	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
-type ProjectCollection struct {
-	projects []*ProjectView
+type Projects struct {
+	projects []*models.Project
 	selected int
 }
 
-func NewProjectCollection() *ProjectCollection {
-	return &ProjectCollection{
-		projects: []*ProjectView{},
+func NewProjectCollection() *Projects {
+	return &Projects{
+		projects: []*models.Project{},
 		selected: 0,
 	}
 }
 
-func (pc *ProjectCollection) AddProject(project *ProjectView) {
+func (pc *Projects) AddProject(project *models.Project) {
 	pc.projects = append(pc.projects, project)
 }
 
-func (pc *ProjectCollection) SelectProject(id string) {
+func (pc *Projects) SelectProject(id string) {
 	for i, project := range pc.projects {
 		if project.ID == id {
 			pc.selected = i
@@ -31,7 +33,7 @@ func (pc *ProjectCollection) SelectProject(id string) {
 	}
 }
 
-func (pc *ProjectCollection) RemoveProject(id string) {
+func (pc *Projects) RemoveProject(id string) {
 	for i, project := range pc.projects {
 		if project.ID == id {
 			pc.projects = append(pc.projects[:i], pc.projects[i+1:]...)
@@ -40,7 +42,7 @@ func (pc *ProjectCollection) RemoveProject(id string) {
 	}
 }
 
-func (pc *ProjectCollection) Update(msg tea.Msg) tea.Cmd {
+func (pc *Projects) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -61,7 +63,7 @@ func (pc *ProjectCollection) Update(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
-func (pc *ProjectCollection) View() string {
+func (pc *Projects) View() string {
 	if len(pc.projects) == 0 {
 		return "No projects available. Press 'n' to add a new project."
 	}
@@ -69,9 +71,7 @@ func (pc *ProjectCollection) View() string {
 	return pc.projects[pc.selected].View()
 }
 
-func (pc *ProjectCollection) Display() string {
-	if len(pc.projects) == 0 {
-		return "Projects"
-	}
-	return fmt.Sprintf("Projects (%d)", len(pc.projects))
+func (pc *Projects) Display() string {
+	style := lipgloss.NewStyle()
+	return style.Render(lipgloss.JoinHorizontal(lipgloss.Left, "Projects", "__FILLER__", fmt.Sprintf("(%d)", len(pc.projects))))
 }

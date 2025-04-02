@@ -24,7 +24,7 @@ func (m model) LoadCmds() []tea.Cmd {
 	cmds := []tea.Cmd{}
 
 	// Make sure the loading state shows for at least a couple seconds
-	cmds = append(cmds, tea.Tick(time.Second*2, func(t time.Time) tea.Msg {
+	cmds = append(cmds, tea.Tick(time.Second, func(t time.Time) tea.Msg {
 		return DelayCompleteMsg{}
 	}))
 

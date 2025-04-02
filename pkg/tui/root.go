@@ -15,18 +15,10 @@ import (
 )
 
 type page = int
-type size = int
 
 const (
 	splashPage page = iota
 	dashboardPage
-)
-
-const (
-	undersized size = iota
-	small
-	medium
-	large
 )
 
 type model struct {
@@ -35,6 +27,7 @@ type model struct {
 	hasScroll       bool
 	renderer        *lipgloss.Renderer
 	page            page
+	footer          *models.Footer
 	dashboard       *Dashboard
 	cursor          Cursor
 	splash          Splash
@@ -45,7 +38,6 @@ type model struct {
 	heightContainer int
 	widthContent    int
 	heightContent   int
-	size            size
 	viewport        viewport.Model
 	theme           theme.Theme
 	error           *VisibleError
@@ -85,6 +77,14 @@ func NewModel(
 		page:      splashPage,
 		renderer:  renderer,
 		theme:     theme.BasicTheme(renderer, nil),
+		footer: &models.Footer{
+			Commands: []models.FooterCommand{
+				{
+					Key:   "r",
+					Value: "Refresh",
+				},
+			},
+		},
 	}
 
 	return result, nil
@@ -115,24 +115,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewportWidth = msg.Width
 		m.viewportHeight = msg.Height
 
-		switch {
-		case m.viewportWidth < 20 || m.viewportHeight < 10:
-			m.size = undersized
-			m.widthContainer = m.viewportWidth
-			m.heightContainer = m.viewportHeight
-		case m.viewportWidth < 50:
-			m.size = small
-			m.widthContainer = m.viewportWidth
-			m.heightContainer = m.viewportHeight
-		case m.viewportWidth < 75:
-			m.size = medium
-			m.widthContainer = 50
-			m.heightContainer = msg.Height - 2 // Leave some margin
-		default:
-			m.size = large
-			m.widthContainer = 75
-			m.heightContainer = msg.Height - 2 // Leave some margin
-		}
+		m.widthContainer = msg.Width
+		m.heightContainer = msg.Height - 2 // Leave some margin
 
 		m.widthContent = m.widthContainer - 4
 		m = m.updateViewport()
@@ -188,9 +172,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	if m.size == undersized {
-		return m.ResizeView()
-	}
 
 	switch m.page {
 	case splashPage:
@@ -198,6 +179,7 @@ func (m model) View() string {
 	case dashboardPage:
 		return m.DashboardView()
 	default:
+		footer := m.FooterView()
 		content := m.viewport.View()
 
 		var view string
@@ -215,7 +197,7 @@ func (m model) View() string {
 		height := m.heightContainer
 		// height -= lipgloss.Height(header)
 		// height -= lipgloss.Height(breadcrumbs)
-		// height -= lipgloss.Height(footer)
+		height -= lipgloss.Height(footer)
 
 		child := lipgloss.JoinVertical(
 			lipgloss.Left,
@@ -226,7 +208,7 @@ func (m model) View() string {
 				Height(height).
 				Padding(0, 0).
 				Render(view),
-			// footer,
+			footer,
 		)
 
 		return m.renderer.Place(
@@ -309,6 +291,13 @@ var modifiedKeyMap = viewport.KeyMap{
 
 func (m model) updateViewport() model {
 	width := m.widthContainer
+
+	footerHeight := lipgloss.Height(m.FooterView())
+
+	verticalMarginHeight := footerHeight + 2
+
+	m.heightContent = m.heightContainer - verticalMarginHeight
+
 	if !m.ready {
 		m.viewport = viewport.New(width, m.heightContent)
 		m.viewport.HighPerformanceRendering = false
