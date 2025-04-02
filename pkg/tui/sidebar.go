@@ -196,7 +196,7 @@ func (s *Sidebar) SidebarView(m model) string {
 	// Replace filler string with spaces, so that we fill the vertical space
 	fillerVertical := "__FILLER_VERTICAL__"
 	replacementVertical := "\n" // Single space
-	fillerVerticalHeight := m.viewportHeight - lipgloss.Height(newString)
+	fillerVerticalHeight := (m.viewportHeight) - lipgloss.Height(newString)
 
 	newStringVertical := strings.ReplaceAll(newString, fillerVertical, strings.Repeat(replacementVertical, fillerVerticalHeight))
 
