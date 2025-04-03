@@ -1,6 +1,9 @@
 package models
 
 import (
+	"encoding/json"
+	"p1/pkg/api"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -18,7 +21,21 @@ func NewProject(id string, name string) *Project {
 }
 
 func (p *Project) Update(msg tea.Msg) tea.Cmd {
-	// Handle updates specific to Project
+	switch msg := msg.(type) {
+	case api.WebSocketDataUpdate:
+		if msg.Type == "project" {
+			var data Project
+			if err := json.Unmarshal([]byte(msg.Data), &data); err != nil {
+				return tea.Cmd(func() tea.Msg {
+					return VisibleError{
+						Message: err.Error(),
+					}
+				})
+			}
+			p.ID = data.ID
+			p.Name = data.Name
+		}
+	}
 	return nil
 }
 

@@ -111,8 +111,16 @@ func HandleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	// Set ping handler
 	conn.SetPingHandler(func(string) error {
+		slog.Info("Received Ping")
 		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return conn.WriteControl(websocket.PongMessage, []byte{}, time.Now().Add(10*time.Second))
+		return conn.WriteControl(websocket.PongMessage, []byte{}, time.Now().Add(5*time.Second))
+	})
+
+	// Set pong handler
+	conn.SetPongHandler(func(appData string) error {
+		slog.Info("Received Pong")
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
 	})
 
 	hub.register <- conn
@@ -208,18 +216,24 @@ func (w *WebSocketClient) Connect() tea.Cmd {
 		// Start listening for messages
 		go func() {
 			for msg := range w.client.MessageChannel() {
-				var data interface{}
+				var data WebSocketMessageData
 				if err := json.Unmarshal(msg.Data, &data); err != nil {
 					slog.Error("Failed to unmarshal message", "error", err)
 					continue
 				}
+				if data.Type == "system:data" {
+					tea.Cmd(func() tea.Msg {
+						return data
+					})()
+				} else {
+					tea.Cmd(func() tea.Msg {
+						return WebSocketUpdateMsg{
+							Type: msg.Type,
+							Data: data,
+						}
+					})()
+				}
 				// Send message to TUI
-				tea.Cmd(func() tea.Msg {
-					return WebSocketUpdateMsg{
-						Type: msg.Type,
-						Data: data,
-					}
-				})()
 			}
 		}()
 
