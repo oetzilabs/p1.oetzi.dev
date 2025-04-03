@@ -18,6 +18,7 @@ type Sidebar struct {
 	search       textinput.Model
 	tabsToRender []tabs.Tab
 	width        int
+	height       int
 }
 
 type Tabs = []tabs.Tab
@@ -33,6 +34,7 @@ func NewSidebar(tabs ...tabs.Tab) *Sidebar {
 		search:       ti,
 		tabsToRender: tabs,
 		width:        30,
+		height:       len(tabs),
 	}
 }
 
@@ -74,6 +76,10 @@ func (s *Sidebar) ViewSelectedTabContent() string {
 	}
 
 	return s.tabsToRender[s.activeTab].Content.View()
+}
+
+func (s *Sidebar) UpdateHeight(height int) {
+	s.height = height
 }
 
 func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
@@ -194,10 +200,10 @@ func (s *Sidebar) View() string {
 	return paddedStyle.Render(lipgloss.JoinVertical(lipgloss.Top, sidebar))
 }
 
-func (s *Sidebar) SidebarView(m model) string {
+func (s *Sidebar) SidebarView() string {
 	original := s.View()
-	sidebarWidth := m.dashboard.sidebar.width
-	viewportHeight := m.viewportHeight
+	sidebarWidth := s.width
+	viewportHeight := s.height
 
 	lines := strings.Split(original, "\n")
 	var processedLines []string
@@ -225,7 +231,7 @@ func (s *Sidebar) SidebarView(m model) string {
 	content = lipgloss.JoinHorizontal(lipgloss.Top, content)
 
 	// Vertical spacing
-	verticalFillerHeight := viewportHeight - lipgloss.Height(content)
+	verticalFillerHeight := max(0, viewportHeight-lipgloss.Height(content))
 	verticalSpace := strings.Repeat("\n", verticalFillerHeight)
 	finalContent := strings.ReplaceAll(content, "__FILLER_VERTICAL__", verticalSpace)
 

@@ -13,3 +13,13 @@ type Update struct {
 	Type string      `json:"type"`
 	Data interface{} `json:"data"`
 }
+
+type VisibleError struct {
+	Message string
+}
+
+func NewVisibleError(message string) VisibleError {
+	return VisibleError{
+		Message: message,
+	}
+}

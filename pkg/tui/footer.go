@@ -60,38 +60,38 @@ func (m model) FooterView() string {
 	lines = append(lines, commands...)
 
 	var content string
-	if m.error != nil {
-		hint := "esc"
+	// if m.error != nil {
+	// 	hint := "esc"
 
-		// Calculate maximum width for error message to ensure it fits
-		maxErrorWidth := m.widthContent - lipgloss.Width(hint) - 6
+	// 	// Calculate maximum width for error message to ensure it fits
+	// 	maxErrorWidth := m.widthContent - lipgloss.Width(hint) - 6
 
-		// Handle wrapping for long error messages
-		errorMsg := m.error.message
-		if lipgloss.Width(errorMsg) > maxErrorWidth {
-			// Split into multiple lines
-			errorMsg = wordWrap(errorMsg, maxErrorWidth)
-		}
+	// 	// Handle wrapping for long error messages
+	// 	errorMsg := m.error.message
+	// 	if lipgloss.Width(errorMsg) > maxErrorWidth {
+	// 		// Split into multiple lines
+	// 		errorMsg = wordWrap(errorMsg, maxErrorWidth)
+	// 	}
 
-		msg := m.theme.PanelError().Padding(0, 1).Render(errorMsg)
+	// 	msg := m.theme.PanelError().Padding(0, 1).Render(errorMsg)
 
-		// Calculate remaining space after rendering the message
-		space := m.widthContent - lipgloss.Width(msg) - lipgloss.Width(hint) - 2
-		if space < 0 {
-			space = 0
-		}
+	// 	// Calculate remaining space after rendering the message
+	// 	space := m.widthContent - lipgloss.Width(msg) - lipgloss.Width(hint) - 2
+	// 	if space < 0 {
+	// 		space = 0
+	// 	}
 
-		height := lipgloss.Height(msg)
+	// 	height := lipgloss.Height(msg)
 
-		content = lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			msg,
-			m.theme.PanelError().Width(space).Height(height).Render(),
-			m.theme.PanelError().Bold(true).Padding(0, 1).Height(height).Render(hint),
-		)
-	} else {
-		content = "test test test"
-	}
+	// 	content = lipgloss.JoinHorizontal(
+	// 		lipgloss.Top,
+	// 		msg,
+	// 		m.theme.PanelError().Width(space).Height(height).Render(),
+	// 		m.theme.PanelError().Bold(true).Padding(0, 1).Height(height).Render(hint),
+	// 	)
+	// } else {
+	// 	content = "test test test"
+	// }
 
 	return lipgloss.JoinVertical(
 		lipgloss.Bottom,

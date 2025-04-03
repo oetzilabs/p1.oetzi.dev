@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"p1/pkg/api"
 	"p1/pkg/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,11 +29,11 @@ func main() {
 
 	// Start websocket server in a goroutine
 	go func() {
-		hub := tui.NewHub()
+		hub := api.NewHub()
 		go hub.Run()
 
 		http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-			tui.HandleWebSocket(hub, w, r)
+			api.HandleWebSocket(hub, w, r)
 		})
 
 		slog.Info("Starting websocket server on port 8080")

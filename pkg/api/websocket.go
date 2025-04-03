@@ -1,4 +1,4 @@
-package tui
+package api
 
 import (
 	"context"
@@ -10,12 +10,20 @@ import (
 	"sync/atomic"
 	"time"
 
-	"p1/pkg/api"
-	"p1/pkg/models"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gorilla/websocket"
 )
+
+// WebSocketUpdateMsg represents a message received from the websocket
+type WebSocketUpdateMsg struct {
+	Type string
+	Data interface{}
+}
+
+// WebSocketErrorMsg represents an error during websocket communication
+type WebSocketErrorMsg struct {
+	Error string
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -29,11 +37,11 @@ type Hub struct {
 	ctx        context.Context
 	cancel     context.CancelFunc
 	clients    map[*websocket.Conn]bool
-	broadcast  chan models.Update
+	broadcast  chan []byte
 	register   chan *websocket.Conn
 	unregister chan *websocket.Conn
 	stateMu    sync.RWMutex
-	state      atomic.Value // Store *models.State
+	state      atomic.Value // Store raw JSON
 }
 
 func NewHub() *Hub {
@@ -42,7 +50,7 @@ func NewHub() *Hub {
 		ctx:        ctx,
 		cancel:     cancel,
 		clients:    make(map[*websocket.Conn]bool),
-		broadcast:  make(chan models.Update, 256),
+		broadcast:  make(chan []byte, 256),
 		register:   make(chan *websocket.Conn, 256),
 		unregister: make(chan *websocket.Conn, 256),
 		state:      atomic.Value{},
@@ -58,15 +66,18 @@ func (h *Hub) Run() {
 			h.clients[client] = true
 			// Send initial state to new client
 			h.stateMu.RLock()
-			initialState := models.Update{
-				Type: "state",
-				Data: h.GetState(),
-			}
+			initialState, _ := h.GetState() // Get raw JSON state
 			h.stateMu.RUnlock()
-			if err := client.WriteJSON(initialState); err != nil {
-				slog.Error("Failed to send initial state", "error", err)
-				client.Close()
-				delete(h.clients, client)
+			if initialState != nil {
+				message := map[string]interface{}{
+					"type": "state",
+					"data": initialState,
+				}
+				if err := client.WriteJSON(message); err != nil {
+					slog.Error("Failed to send initial state", "error", err)
+					client.Close()
+					delete(h.clients, client)
+				}
 			}
 
 		case client := <-h.unregister:
@@ -75,9 +86,9 @@ func (h *Hub) Run() {
 				client.Close()
 			}
 
-		case update := <-h.broadcast:
+		case message := <-h.broadcast:
 			for client := range h.clients {
-				err := client.WriteJSON(update)
+				err := client.WriteMessage(websocket.TextMessage, message)
 				if err != nil {
 					slog.Error("Failed to write message", "error", err)
 					client.Close()
@@ -112,8 +123,7 @@ func HandleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		}()
 
 		for {
-			var update models.Update
-			err := conn.ReadJSON(&update)
+			_, p, err := conn.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					slog.Error("Failed to read message", "error", err)
@@ -121,33 +131,46 @@ func HandleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			// Handle different types of updates
-			switch update.Type {
+			// Process the message
+			var msg map[string]interface{}
+			if err := json.Unmarshal(p, &msg); err != nil {
+				slog.Error("Failed to unmarshal message", "error", err)
+				continue
+			}
+
+			msgType, ok := msg["type"].(string)
+			if !ok {
+				slog.Error("Message type not found or not a string")
+				continue
+			}
+
+			// Handle different types of messages
+			switch msgType {
 			case "state":
 				// Update state and broadcast to all clients
-				hub.stateMu.Lock()
-				var stateUpdate models.State
-				dataBytes, err := json.Marshal(update.Data)
+				data, ok := msg["data"].(interface{})
+				if !ok {
+					slog.Error("Data not found or invalid")
+					continue
+				}
+
+				jsonData, err := json.Marshal(data)
 				if err != nil {
 					slog.Error("Failed to marshal state update", "error", err)
-					hub.stateMu.Unlock()
-					break
+					continue
 				}
-				if err := json.Unmarshal(dataBytes, &stateUpdate); err != nil {
-					slog.Error("Failed to unmarshal state update", "error", err)
-					hub.stateMu.Unlock()
-					break
-				}
-				hub.SetState(&stateUpdate)
+
+				hub.stateMu.Lock()
+				hub.SetState(jsonData) // Store raw JSON
 				hub.stateMu.Unlock()
-				hub.broadcast <- update
+				hub.broadcast <- jsonData
 
 			case "connected":
 				// Handle connection confirmation
 				slog.Info("Client connected")
 
 			default:
-				slog.Info("Received unknown message type", "type", update.Type)
+				slog.Info("Received unknown message type", "type", msgType)
 			}
 		}
 	}()
@@ -155,27 +178,31 @@ func HandleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 // WebSocketClient wraps the API package's websocket client for TUI integration
 type WebSocketClient struct {
-	client *api.WebSocketClient
+	client *WebSocketApiClient
 }
 
 // NewWebSocketClient creates a new websocket client
 func NewWebSocketClient(url string) *WebSocketClient {
 	return &WebSocketClient{
-		client: api.NewWebSocketClient(url),
+		client: NewWebSocketApiClient(url),
 	}
 }
 
 // Connect initiates the websocket connection
 func (w *WebSocketClient) Connect() tea.Cmd {
 	return func() tea.Msg {
+		// Initialize websocket client
+		slog.Info("Connecting Websocket")
+
 		err := w.client.Connect()
 		if err != nil {
-			return VisibleError{message: err.Error()}
+			return WebSocketErrorMsg{Error: err.Error()}
 		}
 
 		// Start subscribing to messages
 		if err := w.client.Subscribe(); err != nil {
-			return VisibleError{message: err.Error()}
+			w.client.Disconnect() // Ensure disconnection on subscription failure
+			return WebSocketErrorMsg{Error: err.Error()}
 		}
 
 		// Start listening for messages
@@ -183,6 +210,7 @@ func (w *WebSocketClient) Connect() tea.Cmd {
 			for msg := range w.client.MessageChannel() {
 				var data interface{}
 				if err := json.Unmarshal(msg.Data, &data); err != nil {
+					slog.Error("Failed to unmarshal message", "error", err)
 					continue
 				}
 				// Send message to TUI
@@ -219,13 +247,20 @@ func (w *WebSocketClient) Send(data interface{}) error {
 	return w.client.Send(data)
 }
 
-func (h *Hub) GetState() *models.State {
-	if state, ok := h.state.Load().(*models.State); ok {
-		return state
+func (h *Hub) GetState() ([]byte, bool) {
+	if state, ok := h.state.Load().([]byte); ok {
+		return state, true
 	}
-	return nil
+	return nil, false
 }
 
-func (h *Hub) SetState(newState *models.State) {
+func (h *Hub) SetState(newState []byte) {
 	h.state.Store(newState)
+}
+
+func (w *WebSocketClient) IsConnected() bool {
+	if w.client != nil {
+		return w.client.IsConnected()
+	}
+	return false
 }

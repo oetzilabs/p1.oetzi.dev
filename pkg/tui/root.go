@@ -3,7 +3,9 @@ package tui
 import (
 	"context"
 	"errors"
+	"log/slog"
 
+	"p1/pkg/api"
 	"p1/pkg/client"
 	"p1/pkg/models"
 	"p1/pkg/tui/theme"
@@ -29,8 +31,8 @@ type model struct {
 	page            page
 	footer          *models.Footer
 	dashboard       *Dashboard
-	cursor          Cursor
-	splash          Splash
+	cursor          *models.Cursor
+	splash          *models.Splash
 	context         context.Context
 	viewportWidth   int
 	viewportHeight  int
@@ -40,21 +42,11 @@ type model struct {
 	heightContent   int
 	viewport        viewport.Model
 	theme           theme.Theme
-	error           *VisibleError
-	wsClient        *WebSocketClient // Will be implemented later
+	error           *models.VisibleError
+	wsClient        *api.WebSocketClient // Will be implemented later
 	wsConnected     bool
 	client          *client.Client
 	updateSub       chan models.Update
-}
-
-type VisibleError struct {
-	message string
-}
-
-// WebSocketUpdateMsg represents a message received from the websocket
-type WebSocketUpdateMsg struct {
-	Type string
-	Data interface{}
 }
 
 func NewModel(
@@ -70,13 +62,22 @@ func NewModel(
 
 	go client.Start(context.Background())
 
+	basicTheme := theme.BasicTheme(renderer, nil)
+	cursor := models.NewCursor(&basicTheme)
+	wsClient := api.NewWebSocketClient(wsURL)
+	splash := models.NewSplash(&basicTheme, wsClient)
+
 	result := model{
 		client:    client,
 		updateSub: client.Subscribe(),
 		context:   context.Background(),
 		page:      splashPage,
 		renderer:  renderer,
-		theme:     theme.BasicTheme(renderer, nil),
+		theme:     basicTheme,
+		dashboard: NewDashboard(&basicTheme),
+		splash:    splash,
+		cursor:    cursor,
+		wsClient:  wsClient,
 		footer: &models.Footer{
 			Commands: []models.FooterCommand{
 				{
@@ -91,7 +92,7 @@ func NewModel(
 }
 
 func (m model) Init() tea.Cmd {
-	return m.SplashInit()
+	return tea.Batch(m.wsClient.Connect(), m.splash.Init())
 }
 
 func (m model) SwitchPage(page page) model {
@@ -100,16 +101,17 @@ func (m model) SwitchPage(page page) model {
 	return m
 }
 
-func (m model) InitialDataLoaded() (model, tea.Cmd) {
-	return m.DashboardSwitch()
-}
-
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 
 	switch msg := msg.(type) {
-	case VisibleError:
+	case models.VisibleError:
 		m.error = &msg
+
+	case api.WebSocketErrorMsg:
+		// Handle WebSocket errors
+		slog.Error("WebSocket error", "error", msg.Error)
+		m.error = &models.VisibleError{Message: msg.Error}
 
 	case tea.WindowSizeMsg:
 		m.viewportWidth = msg.Width
@@ -120,6 +122,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.widthContent = m.widthContainer - 4
 		m = m.updateViewport()
+		m.splash.UpdateSize(m.viewportWidth, m.viewportHeight)
+		m.dashboard.UpdateSize(m.viewportWidth, m.viewportHeight)
+		m.dashboard.sidebar.UpdateHeight(m.viewportHeight)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
@@ -136,21 +141,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 		}
-	case CursorTickMsg:
-		m, cmd := m.CursorUpdate(msg)
-		m.viewport.SetContent(m.getContent())
-		return m, cmd
-	case WebSocketUpdateMsg:
-		// Just update the UI state based on the message
-		// All connection/retry logic is handled by the client
+	case api.WebSocketUpdateMsg:
+		if data, ok := msg.Data.(map[string]interface{}); ok {
+			if data["type"] == "connected" {
+				m.wsConnected = true
+				return m, nil
+			}
+			// Handle other message types here
+			slog.Info("Received websocket update", "data", data)
+		}
 	}
 
-	var cmd tea.Cmd
-	switch m.page {
-	case splashPage:
-		m, cmd = m.SplashUpdate(msg)
-	case dashboardPage:
-		m, cmd = m.DashboardUpdate(msg)
+	var cmd tea.Cmd = tea.Batch(m.splash.Update(msg), m.dashboard.Update(msg))
+
+	if m.splash.IsLoadingComplete() && m.page == splashPage {
+		m = m.SwitchPage(dashboardPage)
+		return m, cmd
 	}
 
 	if cmd != nil {
@@ -172,16 +178,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	footer := m.FooterView()
+
+	if m.error != nil {
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			m.theme.TextError().Render("Error: "+m.error.Message),
+			footer,
+		)
+	}
 
 	switch m.page {
 	case splashPage:
-		return m.SplashView()
+		return lipgloss.JoinHorizontal(lipgloss.Top, m.splash.View(), footer)
 	case dashboardPage:
-		return m.DashboardView()
+		return lipgloss.JoinHorizontal(lipgloss.Top, m.dashboard.View(), footer)
 	default:
-		footer := m.FooterView()
 		content := m.viewport.View()
-
 		var view string
 		if m.hasScroll {
 			view = lipgloss.JoinHorizontal(
@@ -229,7 +242,7 @@ func (m model) getContent() string {
 	page := "unknown"
 	switch m.page {
 	case dashboardPage:
-		page = m.DashboardView()
+		page = m.dashboard.View()
 	}
 	return page
 }
@@ -325,7 +338,7 @@ func (m model) updateViewport() model {
 func listenForUpdates(sub chan models.Update) tea.Cmd {
 	return func() tea.Msg {
 		update := <-sub
-		return WebSocketUpdateMsg{
+		return api.WebSocketUpdateMsg{
 			Type: update.Type,
 			Data: update.Data,
 		}

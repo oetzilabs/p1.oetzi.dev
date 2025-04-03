@@ -2,6 +2,7 @@ package tui
 
 import (
 	tabs "p1/pkg/tabs"
+	"p1/pkg/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -9,9 +10,12 @@ import (
 
 type Dashboard struct {
 	sidebar *Sidebar
+	theme   *theme.Theme
+	width   int
+	height  int
 }
 
-func NewDashboard() *Dashboard {
+func NewDashboard(theme *theme.Theme) *Dashboard {
 	// main
 	projectsTab := tabs.NewProjectsTab()
 	serversTab := tabs.NewServersTab()
@@ -22,6 +26,7 @@ func NewDashboard() *Dashboard {
 	exitTab := tabs.NewExitTab()
 
 	return &Dashboard{
+		theme: theme,
 		sidebar: NewSidebar(
 			projectsTab,
 			serversTab,
@@ -32,30 +37,32 @@ func NewDashboard() *Dashboard {
 	}
 }
 
-func (m model) DashboardSwitch() (model, tea.Cmd) {
-	m.dashboard = NewDashboard()
-	m = m.SwitchPage(dashboardPage)
-	return m, nil
+func (d *Dashboard) UpdateSize(width, height int) {
+	d.width = width
+	d.height = height
 }
 
-func (m model) DashboardUpdate(msg tea.Msg) (model, tea.Cmd) {
-	cmd := m.dashboard.sidebar.Update(msg)
+func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
+	cmd := d.sidebar.Update(msg)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
-			return m, tea.Quit
+			return tea.Quit
 		}
+	case tea.WindowSizeMsg:
+		d.width = msg.Width
+		d.height = msg.Height
 	}
 
-	return m, cmd
+	return cmd
 }
 
-func (m model) DashboardView() string {
-	sidebarBox := m.dashboard.sidebar.SidebarView(m)
+func (d *Dashboard) View() string {
+	sidebarBox := d.sidebar.SidebarView()
 	paddedStyle := lipgloss.NewStyle().Padding(1)
 
-	contentBox := paddedStyle.Width(m.widthContainer - m.dashboard.sidebar.width).Height(m.heightContainer).Render(m.dashboard.sidebar.ViewSelectedTabContent())
+	contentBox := paddedStyle.Width(d.width - d.sidebar.width).Height(d.height).Render(d.sidebar.ViewSelectedTabContent())
 
 	return lipgloss.JoinHorizontal(lipgloss.Left, sidebarBox, contentBox)
 }
