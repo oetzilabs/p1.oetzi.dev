@@ -42,10 +42,11 @@ func main() {
 		}
 	}()
 
-	model, err := tui.NewModel(lipgloss.DefaultRenderer(), os.Getenv("WEBSOCKET_URL"), []string{})
+	model, err := tui.NewModel(lipgloss.DefaultRenderer(), "ws://localhost:8080/ws", []string{})
 	if err != nil {
 		panic(err)
 	}
+
 	if _, err := tea.NewProgram(model, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
