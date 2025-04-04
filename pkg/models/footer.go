@@ -25,6 +25,10 @@ type FooterUpdateHelperMsg struct {
 	Content string
 }
 
+type FooterUpdateCommandsMsg struct {
+	Commands []FooterCommand
+}
+
 func NewFooter(theme *theme.Theme, commands []FooterCommand) *Footer {
 	return &Footer{
 		theme:    theme,
@@ -44,6 +48,8 @@ func (f *Footer) Update(msg tea.Msg) tea.Cmd {
 		f.error = &msg
 	case FooterUpdateHelperMsg:
 		f.helper = msg.Content
+	case FooterUpdateCommandsMsg:
+		f.Commands = msg.Commands
 	}
 	return nil
 }
@@ -53,9 +59,11 @@ func (f *Footer) View() string {
 	base := f.theme.TextAccent().Render
 
 	table := f.theme.Base().
-		Width(f.width).
-		Background(lipgloss.Color("#010101")).
+		Width(f.width - 2).
+		Background(lipgloss.Color("#000000")).
 		Padding(1).
+		PaddingLeft(2).
+		PaddingRight(2).
 		Align(lipgloss.Right)
 
 	lines := []string{}
@@ -77,10 +85,7 @@ func (f *Footer) View() string {
 		msg := f.theme.PanelError().Padding(0, 1).Render(errorMsg)
 
 		// Calculate remaining space after rendering the message
-		space := f.width - lipgloss.Width(msg) - lipgloss.Width(hint) - 2
-		if space < 0 {
-			space = 0
-		}
+		space := max(0, f.width-lipgloss.Width(msg)-lipgloss.Width(hint)-2)
 
 		height := lipgloss.Height(msg)
 
@@ -91,7 +96,7 @@ func (f *Footer) View() string {
 			f.theme.PanelError().Bold(true).Padding(0, 1).Height(height).Render(hint),
 		)
 	} else {
-		content = f.theme.TextAccent().Render(f.helper + " ")
+		content = lipgloss.NewStyle().Foreground(lipgloss.Color("#777777")).Render(f.helper + " ")
 	}
 
 	lines = append(lines, content)

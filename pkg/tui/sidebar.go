@@ -226,7 +226,7 @@ func (s *Sidebar) SidebarView() string {
 
 	// Join the lines back together
 
-	content := lipgloss.JoinHorizontal(lipgloss.Top, s.View()+"\n")
+	content := lipgloss.JoinHorizontal(lipgloss.Top, s.View())
 
 	// Vertical spacing
 	verticalFillerHeight := max(0, viewportHeight-lipgloss.Height(content))

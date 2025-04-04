@@ -29,7 +29,6 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 
 	footerCommands := []models.FooterCommand{
 		{Key: "q", Value: "quit"},
-		{Key: "←/→", Value: "switch tabs"},
 	}
 
 	return &Dashboard{
@@ -64,7 +63,6 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 		d.width = msg.Width
 		d.height = msg.Height
 		d.footer.UpdateWidth(msg.Width - d.sidebar.width)
-
 	}
 
 	return cmd
@@ -72,7 +70,7 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 
 func (d *Dashboard) View() string {
 	sidebarBox := d.sidebar.SidebarView()
-	paddedStyle := lipgloss.NewStyle().Padding(1)
+	paddedStyle := lipgloss.NewStyle().Padding(1).PaddingLeft(2).PaddingRight(2)
 
 	// Subtract some height for the footer
 	contentHeight := d.height - lipgloss.Height(d.footer.View())
