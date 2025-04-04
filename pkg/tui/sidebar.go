@@ -27,6 +27,7 @@ func NewSidebar(tabs ...tabs.Tab) *Sidebar {
 	ti := textinput.New()
 	ti.PromptStyle.MaxWidth(23)
 	ti.PromptStyle.Width(23)
+	ti.Prompt = "# "
 	ti.Placeholder = "Search" + strings.Repeat(" ", 23-lipgloss.Width("Search"))
 
 	return &Sidebar{
