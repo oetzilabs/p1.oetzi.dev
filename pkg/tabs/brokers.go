@@ -32,5 +32,6 @@ func (pt *BrokersTab) View() string {
 }
 
 func (pt *BrokersTab) Display() string {
-	return pt.collection.Display()
+	count := pt.collection.Count()
+	return "Brokers " + count
 }

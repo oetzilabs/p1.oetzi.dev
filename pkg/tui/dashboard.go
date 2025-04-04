@@ -57,8 +57,8 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c":
-			return tea.Quit
+		// case "ctrl+c":
+		// 	return tea.Quit
 		}
 	case tea.WindowSizeMsg:
 		d.width = msg.Width

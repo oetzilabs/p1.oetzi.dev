@@ -5,7 +5,6 @@ import (
 	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type Projects struct {
@@ -71,7 +70,6 @@ func (pc *Projects) View() string {
 	return pc.projects[pc.selected].View()
 }
 
-func (pc *Projects) Display() string {
-	style := lipgloss.NewStyle()
-	return lipgloss.JoinHorizontal(lipgloss.Left, style.Render("Projects", "__FILLER__", fmt.Sprintf("(%d)", len(pc.projects))))
+func (pc *Projects) Count() string {
+	return fmt.Sprintf("(%d)", len(pc.projects))
 }

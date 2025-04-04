@@ -2,18 +2,18 @@ package tabs
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type ExitTab struct{}
 
 func NewExitTab() Tab {
 	return Tab{
-		ID:      "exit",
-		Hidden:  false,
-		Group:   AlignBottom,
-		Content: &ExitTab{},
-		Helper:  "Press 'q' to quit.",
+		ID:           "exit",
+		Hidden:       false,
+		Group:        AlignBottom,
+		Content:      &ExitTab{},
+		Helper:       "Press 'q' to quit.",
+		IgnoreSearch: true,
 	}
 }
 
@@ -34,6 +34,5 @@ func (et *ExitTab) View() string {
 }
 
 func (et *ExitTab) Display() string {
-	style := lipgloss.NewStyle()
-	return lipgloss.JoinVertical(lipgloss.Left, style.Render("Exit", "__FILLER__", "(q)"))
+	return "Exit (q)"
 }

@@ -5,7 +5,6 @@ import (
 	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type BrokerCollection struct {
@@ -67,7 +66,6 @@ func (bc *BrokerCollection) View() string {
 	return content
 }
 
-func (bc *BrokerCollection) Display() string {
-	style := lipgloss.NewStyle()
-	return lipgloss.JoinHorizontal(lipgloss.Left, style.Render("Brokers", "__FILLER__", fmt.Sprintf("(%d)", len(bc.brokers))))
+func (bc *BrokerCollection) Count() string {
+	return fmt.Sprintf("(%d)", len(bc.brokers))
 }

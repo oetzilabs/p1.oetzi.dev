@@ -126,11 +126,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.error = nil
 				return m, nil
 			}
-		case "ctrl+c":
-			if m.wsClient != nil {
-				m.wsClient.Disconnect()
-			}
-			return m, tea.Quit
+			// case "ctrl+c":
+			// 	if m.wsClient != nil {
+			// 		m.wsClient.Disconnect()
+			// 	}
+			// 	return m, tea.Quit
 		}
 	case api.WebSocketUpdateMsg:
 		if data, ok := msg.Data.(map[string]interface{}); ok {

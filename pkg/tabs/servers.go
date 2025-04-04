@@ -23,14 +23,15 @@ func NewServersTab() Tab {
 	}
 }
 
-func (pt *ServersTab) Update(msg tea.Msg) tea.Cmd {
-	return pt.collection.Update(msg)
+func (st *ServersTab) Update(msg tea.Msg) tea.Cmd {
+	return st.collection.Update(msg)
 }
 
-func (pt *ServersTab) View() string {
-	return pt.collection.View()
+func (st *ServersTab) View() string {
+	return st.collection.View()
 }
 
-func (pt *ServersTab) Display() string {
-	return pt.collection.Display()
+func (st *ServersTab) Display() string {
+	count := st.collection.Count()
+	return "Servers " + count
 }

@@ -5,7 +5,6 @@ import (
 	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type ServerCollection struct {
@@ -67,7 +66,6 @@ func (sc *ServerCollection) View() string {
 	return content
 }
 
-func (sc *ServerCollection) Display() string {
-	style := lipgloss.NewStyle()
-	return lipgloss.JoinHorizontal(lipgloss.Left, style.Render("Servers", "__FILLER__", fmt.Sprintf("(%d)", len(sc.servers))))
+func (sc *ServerCollection) Count() string {
+	return fmt.Sprintf("(%d)", len(sc.servers))
 }

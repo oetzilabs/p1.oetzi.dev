@@ -32,5 +32,6 @@ func (pt *ProjectsTab) View() string {
 }
 
 func (pt *ProjectsTab) Display() string {
-	return pt.collection.Display()
+	count := pt.collection.Count()
+	return "Projects " + count
 }

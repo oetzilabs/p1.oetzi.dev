@@ -9,24 +9,21 @@ import (
 
 // Tab represents a tab in the sidebar
 type Tab struct {
-	ID      string
-	Hidden  bool
-	Group   TabGroup
-	Content interfaces.Content
-	Helper  string
-}
-
-type UpdateTabDisplay struct {
-	DisplayLeft  string
-	DisplayRight []string
+	ID           string
+	Hidden       bool
+	Group        TabGroup
+	Content      interfaces.Content
+	Helper       string
+	IgnoreSearch bool
 }
 
 // NewTab creates a new tab
 func NewTab(id string, content interfaces.Content, helper string) Tab {
 	return Tab{
-		ID:      id,
-		Content: content,
-		Helper:  helper,
+		ID:           id,
+		Content:      content,
+		Helper:       helper,
+		IgnoreSearch: false,
 	}
 }
 
