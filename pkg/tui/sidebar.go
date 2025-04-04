@@ -111,6 +111,11 @@ func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
 			} else {
 				s.focused = false
 			}
+		case "q":
+			if s.focused {
+				s.focused = false
+				return tea.Quit
+			}
 		case "j", "down":
 			// Move down in sidebar
 			if !s.search.Focused() && s.activeTab < len(s.tabsToRender)-1 && s.focused {
@@ -121,13 +126,12 @@ func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
 			if !s.search.Focused() && s.activeTab > 0 && s.focused {
 				s.activeTab--
 			}
-
 		case "enter", "tab":
 			// unfocus sidebar
 			if s.search.Focused() {
 				s.search.Blur()
 			}
-			s.focused = true
+			s.focused = false
 		case "ctrl+k":
 			// Return to sidebar
 			if !s.search.Focused() {
@@ -160,7 +164,7 @@ func (s *Sidebar) View() string {
 		display := tab.Display()
 
 		if len(display) > s.width {
-			display = display[:s.width] + "..."
+			display = display[:s.width-3] + "..."
 		}
 
 		if s.tabsToRender[s.activeTab].ID == tab.ID {
@@ -217,7 +221,8 @@ func (s *Sidebar) SidebarView() string {
 
 			// Calculate space needed for this specific line
 			widthBeforeFiller := lipgloss.Width(contentBeforeFiller)
-			spaceNeeded := max(0, sidebarWidth-widthBeforeFiller-lipgloss.Width(contentAfterFiller))
+			widthAfterFiller := lipgloss.Width(contentAfterFiller)
+			spaceNeeded := max(0, sidebarWidth-widthBeforeFiller-widthAfterFiller)
 			horizontalSpace := strings.Repeat(" ", spaceNeeded)
 
 			// Construct the new line
@@ -234,7 +239,6 @@ func (s *Sidebar) SidebarView() string {
 	verticalFillerHeight := max(0, viewportHeight-lipgloss.Height(content))
 	verticalSpace := strings.Repeat("\n", verticalFillerHeight)
 	finalContent := strings.ReplaceAll(content, "__FILLER_VERTICAL__", verticalSpace)
-
 	return lipgloss.NewStyle().
 		Background(lipgloss.Color("#111111")).
 		Width(s.width).

@@ -10,6 +10,7 @@ func NewAboutTab() Tab {
 		Group:   AlignBottom,
 		Hidden:  false,
 		Content: &AboutTab{},
+		Helper:  "",
 	}
 }
 

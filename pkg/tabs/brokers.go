@@ -19,6 +19,7 @@ func NewBrokersTab() Tab {
 		Content: &BrokersTab{
 			collection: collections.NewBrokerCollection(),
 		},
+		Helper: "Here you can see all the brokers that are currently connected to the network.",
 	}
 }
 

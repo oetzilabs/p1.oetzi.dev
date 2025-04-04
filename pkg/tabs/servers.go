@@ -19,6 +19,7 @@ func NewServersTab() Tab {
 		Content: &ServersTab{
 			collection: collections.NewServerCollection(),
 		},
+		Helper: "Here you can see all the servers that are currently connected to the network.",
 	}
 }
 

@@ -2,6 +2,7 @@ package tabs
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type ExitTab struct{}
@@ -12,6 +13,7 @@ func NewExitTab() Tab {
 		Hidden:  false,
 		Group:   AlignBottom,
 		Content: &ExitTab{},
+		Helper:  "Press 'q' to quit.",
 	}
 }
 
@@ -28,9 +30,10 @@ func (et *ExitTab) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (et *ExitTab) View() string {
-	return "This is the Exit screen. Press 'ctrl+c' to quit."
+	return ""
 }
 
 func (et *ExitTab) Display() string {
-	return "Exit"
+	style := lipgloss.NewStyle()
+	return lipgloss.JoinVertical(lipgloss.Left, style.Render("Exit", "__FILLER__", "(q)"))
 }

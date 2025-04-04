@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"p1/pkg/models"
 	tabs "p1/pkg/tabs"
 	"p1/pkg/tui/theme"
 
@@ -13,6 +14,7 @@ type Dashboard struct {
 	theme   *theme.Theme
 	width   int
 	height  int
+	footer  *models.Footer
 }
 
 func NewDashboard(theme *theme.Theme) *Dashboard {
@@ -25,6 +27,11 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 	aboutTab := tabs.NewAboutTab()
 	exitTab := tabs.NewExitTab()
 
+	footerCommands := []models.FooterCommand{
+		{Key: "q", Value: "quit"},
+		{Key: "←/→", Value: "switch tabs"},
+	}
+
 	return &Dashboard{
 		theme: theme,
 		sidebar: NewSidebar(
@@ -34,16 +41,19 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 			aboutTab,
 			exitTab,
 		),
+		footer: models.NewFooter(theme, footerCommands),
 	}
 }
 
 func (d *Dashboard) UpdateSize(width, height int) {
 	d.width = width
 	d.height = height
+	d.footer.UpdateWidth(width)
 }
 
 func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	cmd := d.sidebar.Update(msg)
+	cmd = tea.Batch(cmd, d.footer.Update(msg))
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -53,6 +63,8 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		d.width = msg.Width
 		d.height = msg.Height
+		d.footer.UpdateWidth(msg.Width - d.sidebar.width)
+
 	}
 
 	return cmd
@@ -62,7 +74,17 @@ func (d *Dashboard) View() string {
 	sidebarBox := d.sidebar.SidebarView()
 	paddedStyle := lipgloss.NewStyle().Padding(1)
 
-	contentBox := paddedStyle.Width(d.width - d.sidebar.width).Height(d.height).Render(d.sidebar.ViewSelectedTabContent())
+	// Subtract some height for the footer
+	contentHeight := d.height - lipgloss.Height(d.footer.View())
+	contentBox := paddedStyle.Width(d.width - d.sidebar.width).Height(contentHeight).Render(d.sidebar.ViewSelectedTabContent())
 
-	return lipgloss.JoinHorizontal(lipgloss.Left, sidebarBox, contentBox)
+	mainContent := lipgloss.JoinVertical(
+		lipgloss.Top,
+		contentBox,
+		d.footer.View(),
+	)
+
+	mainContent = lipgloss.JoinHorizontal(lipgloss.Left, sidebarBox, mainContent)
+
+	return mainContent
 }

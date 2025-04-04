@@ -29,7 +29,6 @@ type model struct {
 	hasScroll       bool
 	renderer        *lipgloss.Renderer
 	page            page
-	footer          *models.Footer
 	dashboard       *Dashboard
 	cursor          *models.Cursor
 	splash          *models.Splash
@@ -78,14 +77,6 @@ func NewModel(
 		splash:    splash,
 		cursor:    cursor,
 		wsClient:  wsClient,
-		footer: &models.Footer{
-			Commands: []models.FooterCommand{
-				{
-					Key:   "r",
-					Value: "Refresh",
-				},
-			},
-		},
 	}
 
 	return result, nil
@@ -178,21 +169,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	footer := m.FooterView()
-
 	if m.error != nil {
-		return lipgloss.JoinVertical(
-			lipgloss.Left,
-			m.theme.TextError().Render("Error: "+m.error.Message),
-			footer,
-		)
+		return m.theme.TextError().Render("Error: " + m.error.Message)
 	}
 
 	switch m.page {
 	case splashPage:
-		return lipgloss.JoinHorizontal(lipgloss.Top, m.splash.View(), footer)
+		return m.splash.View()
 	case dashboardPage:
-		return lipgloss.JoinHorizontal(lipgloss.Top, m.dashboard.View(), footer)
+		return m.dashboard.View()
 	default:
 		content := m.viewport.View()
 		var view string
@@ -200,7 +185,7 @@ func (m model) View() string {
 			view = lipgloss.JoinHorizontal(
 				lipgloss.Top,
 				content,
-				m.theme.Base().Width(1).Render(), // space between content and scrollbar
+				m.theme.Base().Width(1).Render(),
 				m.getScrollbar(),
 			)
 		} else {
@@ -208,20 +193,14 @@ func (m model) View() string {
 		}
 
 		height := m.heightContainer
-		// height -= lipgloss.Height(header)
-		// height -= lipgloss.Height(breadcrumbs)
-		height -= lipgloss.Height(footer)
 
 		child := lipgloss.JoinVertical(
 			lipgloss.Left,
-			// header,
-			// breadcrumbs,
 			m.theme.Base().
 				Width(m.widthContainer).
 				Height(height).
 				Padding(0, 0).
 				Render(view),
-			footer,
 		)
 
 		return m.renderer.Place(
@@ -235,7 +214,6 @@ func (m model) View() string {
 				Render(child),
 		)
 	}
-
 }
 
 func (m model) getContent() string {
@@ -305,9 +283,7 @@ var modifiedKeyMap = viewport.KeyMap{
 func (m model) updateViewport() model {
 	width := m.widthContainer
 
-	footerHeight := lipgloss.Height(m.FooterView())
-
-	verticalMarginHeight := footerHeight + 2
+	verticalMarginHeight := 2
 
 	m.heightContent = m.heightContainer - verticalMarginHeight
 

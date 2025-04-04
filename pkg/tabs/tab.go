@@ -2,6 +2,7 @@ package tabs
 
 import (
 	interfaces "p1/pkg/interfaces"
+	"p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -12,6 +13,7 @@ type Tab struct {
 	Hidden  bool
 	Group   TabGroup
 	Content interfaces.Content
+	Helper  string
 }
 
 type UpdateTabDisplay struct {
@@ -20,10 +22,11 @@ type UpdateTabDisplay struct {
 }
 
 // NewTab creates a new tab
-func NewTab(id string, content interfaces.Content) Tab {
+func NewTab(id string, content interfaces.Content, helper string) Tab {
 	return Tab{
 		ID:      id,
 		Content: content,
+		Helper:  helper,
 	}
 }
 
@@ -32,8 +35,9 @@ func (t *Tab) Update(msg tea.Msg) tea.Cmd {
 	if t.Content == nil {
 		return nil
 	}
+	updateHelperMsg := tea.Cmd(func() tea.Msg { return models.FooterUpdateHelperMsg{Content: t.Helper} })
 
-	return t.Content.Update(msg)
+	return tea.Batch(t.Content.Update(msg), updateHelperMsg)
 }
 
 // View returns the tab's view
@@ -47,5 +51,6 @@ func (t *Tab) View() string {
 
 // View returns the tab's view
 func (t *Tab) Display() string {
+
 	return t.Content.Display()
 }

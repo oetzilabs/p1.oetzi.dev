@@ -19,6 +19,7 @@ func NewProjectsTab() Tab {
 		Content: &ProjectsTab{
 			collection: collections.NewProjectCollection(),
 		},
+		Helper: "Here you can see all the projects that are on your network.",
 	}
 }
 
