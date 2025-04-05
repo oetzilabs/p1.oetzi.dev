@@ -75,7 +75,6 @@ func filterTabsGroup(tabs Tabs, group tabs.TabGroup) Tabs {
 }
 
 func (s *Sidebar) ViewSelectedTabContent() string {
-
 	if len(s.tabsToRender) == 0 {
 		return "No tabs found"
 	}
@@ -85,11 +84,9 @@ func (s *Sidebar) ViewSelectedTabContent() string {
 		return "No content found"
 	}
 
-	return s.tabsToRender[s.activeTab].Content.View()
-}
+	paddingStyle := lipgloss.NewStyle().Padding(1).PaddingLeft(2).PaddingRight(2)
 
-func (s *Sidebar) UpdateHeight(height int) {
-	s.height = height
+	return paddingStyle.Render(content.View())
 }
 
 func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
@@ -111,6 +108,8 @@ func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
 	cmd = tea.Batch(cmd, tabCmd)
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		s.height = msg.Height
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "s":
@@ -219,23 +218,17 @@ func (s *Sidebar) View() string {
 		sidebar += s.formatTabEntry(display, isActive) + "\n"
 	}
 
-	return paddedStyle.Render(lipgloss.JoinVertical(lipgloss.Top, sidebar))
-}
+	content := paddedStyle.Render(lipgloss.JoinVertical(lipgloss.Top, sidebar))
 
-func (s *Sidebar) SidebarView() string {
-	viewportHeight := s.height
-
-	// Join the lines back together
-
-	content := lipgloss.JoinHorizontal(lipgloss.Top, s.View())
+	content = lipgloss.JoinHorizontal(lipgloss.Top, content)
 
 	// Vertical spacing
-	verticalFillerHeight := max(0, viewportHeight-lipgloss.Height(content))
+	verticalFillerHeight := max(0, s.height-lipgloss.Height(content))
 	verticalSpace := strings.Repeat("\n", verticalFillerHeight)
 	finalContent := strings.ReplaceAll(content, "__FILLER_VERTICAL__", verticalSpace)
 	return lipgloss.NewStyle().
 		Background(lipgloss.AdaptiveColor{Dark: "#111111", Light: "#EEEEEE"}).
 		Width(s.width).
-		Height(viewportHeight).
+		Height(s.height).
 		Render(finalContent)
 }

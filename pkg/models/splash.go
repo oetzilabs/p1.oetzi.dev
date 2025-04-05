@@ -1,6 +1,7 @@
 package models
 
 import (
+	"log/slog"
 	"p1/pkg/tui/theme"
 	"time"
 
@@ -67,12 +68,16 @@ func (sp *Splash) UpdateSize(width, height int) {
 
 func (sp *Splash) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
-	switch msg.(type) {
+	switch msg := msg.(type) {
 	case BrokerDataLoaded:
 		sp.data = true
 		cmds = append(cmds, sp.LoadCmds()...)
 	case DelayCompleteMsg:
 		sp.delay = true
+	case tea.WindowSizeMsg:
+		slog.Info("SPLASH WINDOW SIZE", "width", msg.Width, "height", msg.Height)
+		sp.width = msg.Width
+		sp.height = msg.Height
 	}
 	return tea.Batch(cmds...)
 }

@@ -5,18 +5,47 @@ import (
 	tabs "p1/pkg/tabs"
 	"p1/pkg/tui/theme"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 type Dashboard struct {
-	sidebar  *Sidebar
-	theme    *theme.Theme
-	width    int
-	height   int
-	viewport viewport.Model
-	footer   *models.Footer
+	sidebar   *Sidebar
+	theme     *theme.Theme
+	width     int
+	height    int
+	viewport  viewport.Model
+	footer    *models.Footer
+	hasScroll bool
+}
+
+var modifiedKeyMap = viewport.KeyMap{
+	PageDown: key.NewBinding(
+		key.WithKeys("pgdown"),
+		key.WithHelp("pgdn", "page down"),
+	),
+	PageUp: key.NewBinding(
+		key.WithKeys("pgup"),
+		key.WithHelp("pgup", "page up"),
+	),
+	HalfPageUp: key.NewBinding(
+		key.WithKeys("ctrl+u"),
+		key.WithHelp("ctrl+u", "½ page up"),
+	),
+	HalfPageDown: key.NewBinding(
+		key.WithKeys("ctrl+d"),
+		key.WithHelp("ctrl+d", "½ page down"),
+	),
+	Up: key.NewBinding(
+		key.WithKeys("up"),
+		key.WithHelp("↑", "up"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down"),
+		key.WithHelp("↓", "down"),
+	),
 }
 
 func NewDashboard(theme *theme.Theme) *Dashboard {
@@ -34,6 +63,9 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 	footer := models.NewFooter(theme, footerCommands)
 	footer.ResetCommands()
 
+	vp := viewport.New(0, 0)
+	vp.HighPerformanceRendering = false
+
 	return &Dashboard{
 		theme: theme,
 		sidebar: NewSidebar(
@@ -44,25 +76,22 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 			exitTab,
 		),
 		footer:   footer,
-		viewport: viewport.New(0, 0),
+		viewport: vp,
 	}
-}
-
-func (d *Dashboard) UpdateSize(width, height int) {
-	d.width = width
-	d.height = height
-	d.viewport.Width = width
-	d.viewport.Height = height - lipgloss.Height(d.footer.View())
-	d.sidebar.UpdateHeight(height)
-	d.footer.UpdateWidth(width)
 }
 
 func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	cmd := d.sidebar.Update(msg)
 	cmd = tea.Batch(cmd, d.footer.Update(msg))
-	var cmd2 tea.Cmd
-	d.viewport, cmd2 = d.viewport.Update(msg)
-	cmd = tea.Batch(cmd, cmd2)
+
+	// if d.hasScroll {
+	// 	d.width = d.width - 4
+	// } else {
+	// 	d.width = d.width - 0
+	// }
+
+	d.viewport.KeyMap = modifiedKeyMap
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -72,31 +101,77 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		d.width = msg.Width
 		d.height = msg.Height
-		d.viewport.Width = msg.Width
+		d.viewport.Width = msg.Width - d.sidebar.width
 		d.viewport.Height = msg.Height - lipgloss.Height(d.footer.View())
-		d.sidebar.UpdateHeight(msg.Height)
 		d.footer.UpdateWidth(msg.Width - d.sidebar.width)
 	}
+
+	d.viewport.SetContent(d.sidebar.ViewSelectedTabContent())
+	d.viewport.Width = d.width
+	d.viewport.Height = d.height - lipgloss.Height(d.footer.View())
+	var cmd2 tea.Cmd
+	d.viewport, cmd2 = d.viewport.Update(msg)
+	cmd = tea.Batch(cmd, cmd2)
+	d.hasScroll = d.viewport.VisibleLineCount() < d.viewport.TotalLineCount()
 
 	return cmd
 }
 
 func (d *Dashboard) View() string {
-	sidebarBox := d.sidebar.SidebarView()
-	paddedStyle := lipgloss.NewStyle().Padding(1).PaddingLeft(2).PaddingRight(2)
+	sidebarBox := d.sidebar.View()
 
-	// Subtract some height for the footer
-	contentHeight := d.height - lipgloss.Height(d.footer.View())
-	contentBox := paddedStyle.Width(d.width - d.sidebar.width).Height(contentHeight).Render(d.sidebar.ViewSelectedTabContent())
-	d.viewport.SetContent(contentBox)
+	footerContent := d.footer.View()
+
+	content := d.viewport.View()
+
+	var view string
+	if d.hasScroll {
+		view = lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			content,
+			d.theme.Base().Width(1).Render(),
+			d.getScrollbar(content),
+		)
+	} else {
+		view = lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			content,
+		)
+	}
 
 	mainContent := lipgloss.JoinVertical(
 		lipgloss.Top,
-		d.viewport.View(),
-		d.footer.View(),
+		view,
+		footerContent,
 	)
 
-	mainContent = lipgloss.JoinHorizontal(lipgloss.Left, sidebarBox, mainContent)
+	return lipgloss.JoinHorizontal(lipgloss.Left, sidebarBox, mainContent)
+}
 
-	return mainContent
+func (d *Dashboard) getScrollbar(content string) string {
+	y := d.viewport.YOffset
+	vh := d.viewport.Height
+	ch := lipgloss.Height(content)
+	if vh >= ch {
+		return ""
+	}
+
+	height := (vh * vh) / ch
+	maxScroll := ch - vh
+	nYP := 1.0 - (float64(y) / float64(maxScroll))
+	if nYP <= 0 {
+		nYP = 1
+	} else if nYP >= 1 {
+		nYP = 0
+	}
+
+	bar := d.theme.Base().
+		Height(height).
+		Width(1).
+		Background(d.theme.Accent()).
+		Render()
+
+	style := d.theme.Base().Width(1).Height(vh)
+
+	return style.Render(lipgloss.PlaceVertical(vh, lipgloss.Position(nYP), bar))
 }

@@ -5,6 +5,7 @@ import (
 	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type Projects struct {
@@ -67,7 +68,7 @@ func (pc *Projects) View() string {
 		return "No projects available. Press 'n' to add a new project."
 	}
 
-	return pc.projects[pc.selected].View()
+	return lipgloss.JoinHorizontal(lipgloss.Top, pc.projects[pc.selected].View())
 }
 
 func (pc *Projects) Count() string {
