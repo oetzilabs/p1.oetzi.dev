@@ -2,9 +2,7 @@ package tui
 
 import (
 	"context"
-	"log/slog"
 
-	"p1/pkg/api"
 	"p1/pkg/models"
 	"p1/pkg/tui/theme"
 
@@ -75,11 +73,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case models.VisibleError:
 		m.error = &msg
-
-	case api.WebSocketErrorMsg:
-		// Handle WebSocket errors
-		slog.Error("WebSocket error", "error", msg.Error)
-		m.error = &models.VisibleError{Message: msg.Error}
 
 	case tea.WindowSizeMsg:
 		m.viewportWidth = msg.Width
