@@ -3,10 +3,8 @@ package main
 import (
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 
-	"p1/pkg/api"
 	"p1/pkg/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -27,22 +25,7 @@ func main() {
 	defer log.Close()
 	slog.SetDefault(slog.New(slog.NewTextHandler(log, &slog.HandlerOptions{})))
 
-	// Start websocket server in a goroutine
-	go func() {
-		hub := api.NewHub()
-		go hub.Run()
-
-		http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-			api.HandleWebSocket(hub, w, r)
-		})
-
-		slog.Info("Starting websocket server on port 8080")
-		if err := http.ListenAndServe(":8080", nil); err != nil {
-			slog.Error("Failed to start websocket server", "error", err)
-		}
-	}()
-
-	model, err := tui.NewModel(lipgloss.DefaultRenderer(), "ws://localhost:8080/ws", []string{})
+	model, err := tui.NewModel(lipgloss.DefaultRenderer(), []string{})
 	if err != nil {
 		panic(err)
 	}

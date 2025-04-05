@@ -54,13 +54,20 @@ func (f *Footer) Update(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+func (f *Footer) ResetCommands() {
+	f.Commands = []FooterCommand{
+		{Key: "q", Value: "quit"},
+		{Key: "ctrl+k", Value: "Focus Sidebar"},
+	}
+}
+
 func (f *Footer) View() string {
-	bold := f.theme.TextAccent().Bold(true).Render
-	base := f.theme.TextAccent().Render
+	bold := f.theme.TextAccent().Background(lipgloss.AdaptiveColor{Dark: "#000000", Light: "#FFFFFF"}).Bold(true).Render
+	base := f.theme.TextAccent().Background(lipgloss.AdaptiveColor{Dark: "#000000", Light: "#FFFFFF"}).Render
 
 	table := f.theme.Base().
 		Width(f.width - 2).
-		Background(lipgloss.Color("#000000")).
+		Background(lipgloss.AdaptiveColor{Dark: "#000000", Light: "#FFFFFF"}).
 		Padding(1).
 		PaddingLeft(2).
 		PaddingRight(2).
@@ -96,7 +103,9 @@ func (f *Footer) View() string {
 			f.theme.PanelError().Bold(true).Padding(0, 1).Height(height).Render(hint),
 		)
 	} else {
-		content = lipgloss.NewStyle().Foreground(lipgloss.Color("#777777")).Render(f.helper + " ")
+		content = lipgloss.NewStyle().
+			Background(lipgloss.AdaptiveColor{Dark: "#000000", Light: "#FFFFFF"}).
+			Foreground(lipgloss.Color("#777777")).Render(f.helper + " ")
 	}
 
 	lines = append(lines, content)
@@ -108,7 +117,7 @@ func (f *Footer) View() string {
 		if cmdIndex < len(f.Commands)-1 {
 			spacer = "|"
 		}
-		commands = append(commands, bold(" "+cmd.Key+" ")+base(cmd.Value+"  ")+spacer)
+		commands = append(commands, bold(" "+cmd.Key+" ")+base(cmd.Value+" ")+base(spacer))
 	}
 
 	lines = append(lines, commands...)

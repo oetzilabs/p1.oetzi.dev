@@ -5,16 +5,18 @@ import (
 	tabs "p1/pkg/tabs"
 	"p1/pkg/tui/theme"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 type Dashboard struct {
-	sidebar *Sidebar
-	theme   *theme.Theme
-	width   int
-	height  int
-	footer  *models.Footer
+	sidebar  *Sidebar
+	theme    *theme.Theme
+	width    int
+	height   int
+	viewport viewport.Model
+	footer   *models.Footer
 }
 
 func NewDashboard(theme *theme.Theme) *Dashboard {
@@ -27,9 +29,10 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 	aboutTab := tabs.NewAboutTab()
 	exitTab := tabs.NewExitTab()
 
-	footerCommands := []models.FooterCommand{
-		{Key: "q", Value: "quit"},
-	}
+	footerCommands := []models.FooterCommand{}
+
+	footer := models.NewFooter(theme, footerCommands)
+	footer.ResetCommands()
 
 	return &Dashboard{
 		theme: theme,
@@ -40,19 +43,26 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 			aboutTab,
 			exitTab,
 		),
-		footer: models.NewFooter(theme, footerCommands),
+		footer:   footer,
+		viewport: viewport.New(0, 0),
 	}
 }
 
 func (d *Dashboard) UpdateSize(width, height int) {
 	d.width = width
 	d.height = height
+	d.viewport.Width = width
+	d.viewport.Height = height - lipgloss.Height(d.footer.View())
+	d.sidebar.UpdateHeight(height)
 	d.footer.UpdateWidth(width)
 }
 
 func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	cmd := d.sidebar.Update(msg)
 	cmd = tea.Batch(cmd, d.footer.Update(msg))
+	var cmd2 tea.Cmd
+	d.viewport, cmd2 = d.viewport.Update(msg)
+	cmd = tea.Batch(cmd, cmd2)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -62,6 +72,9 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		d.width = msg.Width
 		d.height = msg.Height
+		d.viewport.Width = msg.Width
+		d.viewport.Height = msg.Height - lipgloss.Height(d.footer.View())
+		d.sidebar.UpdateHeight(msg.Height)
 		d.footer.UpdateWidth(msg.Width - d.sidebar.width)
 	}
 
@@ -75,10 +88,11 @@ func (d *Dashboard) View() string {
 	// Subtract some height for the footer
 	contentHeight := d.height - lipgloss.Height(d.footer.View())
 	contentBox := paddedStyle.Width(d.width - d.sidebar.width).Height(contentHeight).Render(d.sidebar.ViewSelectedTabContent())
+	d.viewport.SetContent(contentBox)
 
 	mainContent := lipgloss.JoinVertical(
 		lipgloss.Top,
-		contentBox,
+		d.viewport.View(),
 		d.footer.View(),
 	)
 

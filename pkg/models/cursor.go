@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log/slog"
 	"p1/pkg/tui/theme"
 	"time"
 
@@ -9,33 +8,32 @@ import (
 )
 
 type Cursor struct {
-	visible bool
-	theme   *theme.Theme
+	visible    bool
+	theme      *theme.Theme
+	tickMillis int
 }
 
 type CursorTickMsg struct{}
 
-func NewCursor(theme *theme.Theme) *Cursor {
+func NewCursor(theme *theme.Theme, tickMillis int) *Cursor {
 	return &Cursor{
-		theme:   theme,
-		visible: true,
+		theme:      theme,
+		visible:    true,
+		tickMillis: tickMillis,
 	}
 }
 
 func (c *Cursor) Init() tea.Cmd {
-	slog.Info("Initializing Cursor")
-	return tea.Every(time.Millisecond*700, func(t time.Time) tea.Msg {
+	return tea.Every(time.Millisecond*time.Duration(c.tickMillis), func(t time.Time) tea.Msg {
 		return CursorTickMsg{}
 	})
 }
 
 func (c *Cursor) Update(msg tea.Msg) tea.Cmd {
-	// slog.Info("Updating Cursor")
 	switch msg.(type) {
 	case CursorTickMsg:
 		c.visible = !c.visible
-		return tea.Every(time.Millisecond*700, func(t time.Time) tea.Msg {
-			slog.Info("Toggling Cursor")
+		return tea.Every(time.Millisecond*time.Duration(c.tickMillis), func(t time.Time) tea.Msg {
 			return CursorTickMsg{}
 		})
 	}
@@ -43,7 +41,6 @@ func (c *Cursor) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (c *Cursor) View() string {
-	// slog.Info("Rendering Cursor")
 	if c.visible {
 		return c.theme.Base().Background(c.theme.Highlight()).Render(" ")
 	} else {

@@ -1,8 +1,6 @@
 package models
 
 import (
-	"log/slog"
-	"p1/pkg/api"
 	"p1/pkg/tui/theme"
 	"time"
 
@@ -11,13 +9,12 @@ import (
 )
 
 type Splash struct {
-	data     bool
-	delay    bool
-	theme    *theme.Theme
-	wsClient *api.WebSocketClient
-	logo     *Logo
-	width    int
-	height   int
+	data   bool
+	delay  bool
+	theme  *theme.Theme
+	logo   *Logo
+	width  int
+	height int
 }
 
 type DelayCompleteMsg struct{}
@@ -38,27 +35,29 @@ func (sp *Splash) LoadCmds() []tea.Cmd {
 	return cmds
 }
 
-func NewSplash(theme *theme.Theme, wsClient *api.WebSocketClient) *Splash {
-	cursor := NewCursor(theme)
+func NewSplash(theme *theme.Theme) *Splash {
+	cursor := NewCursor(theme, 700)
 	return &Splash{
-		theme:    theme,
-		wsClient: wsClient,
-		logo:     NewLogo(theme, cursor),
+		theme: theme,
+		logo:  NewLogo(theme, cursor),
 	}
 }
 
 func (sp *Splash) Init() tea.Cmd {
-	slog.Info("Initializing Splash")
 
-	cmd := func() tea.Msg {
-		time.Sleep(time.Second * 1)
+	var cmd tea.Cmd
+
+	cmd = tea.Batch(cmd, sp.logo.Init())
+
+	cmd = tea.Batch(cmd, func() tea.Msg {
 		return BrokerDataLoaded{}
-	}
+	})
 
-	disableMouseCmd := func() tea.Msg {
+	cmd = tea.Batch(cmd, func() tea.Msg {
 		return tea.DisableMouse()
-	}
-	return tea.Batch(cmd, disableMouseCmd)
+	})
+
+	return cmd
 }
 
 func (sp *Splash) UpdateSize(width, height int) {
@@ -67,18 +66,15 @@ func (sp *Splash) UpdateSize(width, height int) {
 }
 
 func (sp *Splash) Update(msg tea.Msg) tea.Cmd {
-	var cmd tea.Cmd = sp.logo.Update(msg)
+	var cmds []tea.Cmd
 	switch msg.(type) {
 	case BrokerDataLoaded:
-		slog.Info("Broker data loaded")
 		sp.data = true
-		cmd = tea.Batch(sp.LoadCmds()...)
-		return cmd
+		cmds = append(cmds, sp.LoadCmds()...)
 	case DelayCompleteMsg:
-		slog.Info("Delay Set")
 		sp.delay = true
 	}
-	return cmd
+	return tea.Batch(cmds...)
 }
 
 func (sp *Splash) View() string {
@@ -108,5 +104,5 @@ func (sp *Splash) View() string {
 
 func (sp *Splash) IsLoadingComplete() bool {
 	return sp.data &&
-		sp.delay && sp.wsClient.IsConnected()
+		sp.delay
 }

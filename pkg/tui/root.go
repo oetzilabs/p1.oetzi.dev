@@ -2,11 +2,9 @@ package tui
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 
 	"p1/pkg/api"
-	"p1/pkg/client"
 	"p1/pkg/models"
 	"p1/pkg/tui/theme"
 
@@ -30,7 +28,6 @@ type model struct {
 	renderer        *lipgloss.Renderer
 	page            page
 	dashboard       *Dashboard
-	cursor          *models.Cursor
 	splash          *models.Splash
 	context         context.Context
 	viewportWidth   int
@@ -42,48 +39,30 @@ type model struct {
 	viewport        viewport.Model
 	theme           theme.Theme
 	error           *models.VisibleError
-	wsClient        *api.WebSocketClient // Will be implemented later
-	wsConnected     bool
-	client          *client.Client
-	updateSub       chan models.Update
 }
 
 func NewModel(
 	renderer *lipgloss.Renderer,
-	wsURL string,
 	command []string,
 ) (tea.Model, error) {
-	if wsURL == "" {
-		return nil, errors.New("WEBSOCKET_URL is not set")
-	}
-
-	client := client.NewClient(wsURL)
-
-	go client.Start(context.Background())
 
 	basicTheme := theme.BasicTheme(renderer, nil)
-	cursor := models.NewCursor(&basicTheme)
-	wsClient := api.NewWebSocketClient(wsURL)
-	splash := models.NewSplash(&basicTheme, wsClient)
+	splash := models.NewSplash(&basicTheme)
 
 	result := model{
-		client:    client,
-		updateSub: client.Subscribe(),
 		context:   context.Background(),
 		page:      splashPage,
 		renderer:  renderer,
 		theme:     basicTheme,
 		dashboard: NewDashboard(&basicTheme),
 		splash:    splash,
-		cursor:    cursor,
-		wsClient:  wsClient,
 	}
 
 	return result, nil
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(m.wsClient.Connect(), m.splash.Init())
+	return m.splash.Init()
 }
 
 func (m model) SwitchPage(page page) model {
@@ -126,20 +105,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.error = nil
 				return m, nil
 			}
-			// case "ctrl+c":
-			// 	if m.wsClient != nil {
-			// 		m.wsClient.Disconnect()
-			// 	}
-			// 	return m, tea.Quit
-		}
-	case api.WebSocketUpdateMsg:
-		if data, ok := msg.Data.(map[string]interface{}); ok {
-			if data["type"] == "connected" {
-				m.wsConnected = true
-				return m, nil
-			}
-			// Handle other message types here
-			slog.Info("Received websocket update", "data", data)
 		}
 	}
 
@@ -161,9 +126,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.switched = false
 	}
 	cmds = append(cmds, cmd)
-
-	// Always keep listening for updates
-	cmds = append(cmds, listenForUpdates(m.updateSub))
 
 	return m, tea.Batch(cmds...)
 }
@@ -308,15 +270,4 @@ func (m model) updateViewport() model {
 	m.viewport.KeyMap = modifiedKeyMap
 
 	return m
-}
-
-// Add a command to listen for updates
-func listenForUpdates(sub chan models.Update) tea.Cmd {
-	return func() tea.Msg {
-		update := <-sub
-		return api.WebSocketUpdateMsg{
-			Type: update.Type,
-			Data: update.Data,
-		}
-	}
 }

@@ -234,7 +234,7 @@ func (s *Sidebar) SidebarView() string {
 	verticalSpace := strings.Repeat("\n", verticalFillerHeight)
 	finalContent := strings.ReplaceAll(content, "__FILLER_VERTICAL__", verticalSpace)
 	return lipgloss.NewStyle().
-		Background(lipgloss.Color("#111111")).
+		Background(lipgloss.AdaptiveColor{Dark: "#111111", Light: "#EEEEEE"}).
 		Width(s.width).
 		Height(viewportHeight).
 		Render(finalContent)
