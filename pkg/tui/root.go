@@ -43,7 +43,6 @@ type model struct {
 
 func NewModel(
 	renderer *lipgloss.Renderer,
-	command []string,
 ) (tea.Model, error) {
 
 	basicTheme := theme.BasicTheme(renderer, nil)

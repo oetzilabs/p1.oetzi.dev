@@ -25,7 +25,7 @@ func main() {
 	defer log.Close()
 	slog.SetDefault(slog.New(slog.NewTextHandler(log, &slog.HandlerOptions{})))
 
-	model, err := tui.NewModel(lipgloss.DefaultRenderer(), []string{})
+	model, err := tui.NewModel(lipgloss.DefaultRenderer())
 	if err != nil {
 		panic(err)
 	}
