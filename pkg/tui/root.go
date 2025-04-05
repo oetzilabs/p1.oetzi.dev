@@ -41,20 +41,19 @@ type model struct {
 	error           *models.VisibleError
 }
 
-func NewModel(
-	renderer *lipgloss.Renderer,
-) (tea.Model, error) {
-
+func NewModel(renderer *lipgloss.Renderer) (tea.Model, error) {
 	basicTheme := theme.BasicTheme(renderer, nil)
+
 	splash := models.NewSplash(&basicTheme)
+	dashboard := NewDashboard(&basicTheme)
 
 	result := model{
-		context:   context.Background(),
-		page:      splashPage,
 		renderer:  renderer,
+		context:   context.Background(),
 		theme:     basicTheme,
-		dashboard: NewDashboard(&basicTheme),
+		page:      splashPage,
 		splash:    splash,
+		dashboard: dashboard,
 	}
 
 	return result, nil
