@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"p1/pkg/interfaces"
 	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,14 +10,16 @@ import (
 )
 
 type Projects struct {
-	projects []*models.Project
-	selected int
+	projects    []*models.Project
+	selected    int
+	placeholder string
 }
 
 func NewProjectCollection() *Projects {
 	return &Projects{
-		projects: []*models.Project{},
-		selected: 0,
+		projects:    []*models.Project{},
+		selected:    0,
+		placeholder: "There are no projects yet, press 'n' to create a new one.",
 	}
 }
 
@@ -46,8 +49,7 @@ func (pc *Projects) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "n":
-		case "d":
+		case "ctrl+n":
 		}
 	}
 	var cmd tea.Cmd
@@ -65,7 +67,7 @@ func (pc *Projects) Update(msg tea.Msg) tea.Cmd {
 
 func (pc *Projects) View() string {
 	if len(pc.projects) == 0 {
-		return "No projects available. Press 'n' to add a new project."
+		return pc.placeholder
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, pc.projects[pc.selected].View())
@@ -73,4 +75,10 @@ func (pc *Projects) View() string {
 
 func (pc *Projects) Count() string {
 	return fmt.Sprintf("(%d)", len(pc.projects))
+}
+
+func (pc *Projects) Commands() []interfaces.FooterCommand {
+	return []interfaces.FooterCommand{
+		{Key: "ctrl+n", Value: "New Project"},
+	}
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 
+	"p1/pkg/interfaces"
 	tabs "p1/pkg/tabs"
 )
 
@@ -72,21 +73,6 @@ func filterTabsGroup(tabs Tabs, group tabs.TabGroup) Tabs {
 		}
 	}
 	return tabsToRender
-}
-
-func (s *Sidebar) ViewSelectedTabContent() string {
-	if len(s.tabsToRender) == 0 {
-		return "No tabs found"
-	}
-
-	content := s.tabsToRender[s.activeTab].Content
-	if content == nil {
-		return "No content found"
-	}
-
-	paddingStyle := lipgloss.NewStyle().Padding(1).PaddingLeft(2).PaddingRight(2)
-
-	return paddingStyle.Render(content.View())
 }
 
 func (s *Sidebar) Update(msg tea.Msg) tea.Cmd {
@@ -231,4 +217,24 @@ func (s *Sidebar) View() string {
 		Width(s.width).
 		Height(s.height).
 		Render(finalContent)
+}
+
+func (s *Sidebar) SelectedTabContentView() string {
+	if len(s.tabsToRender) == 0 {
+		return "No tabs found"
+	}
+
+	content := s.tabsToRender[s.activeTab].Content
+	if content == nil {
+		return "No content found"
+	}
+
+	return content.View()
+}
+func (s *Sidebar) SelectedTabContentCommands() []interfaces.FooterCommand {
+	if len(s.tabsToRender) == 0 {
+		return []interfaces.FooterCommand{}
+	}
+
+	return s.tabsToRender[s.activeTab].Commands()
 }

@@ -1,6 +1,7 @@
 package tabs
 
 import (
+	"p1/pkg/interfaces"
 	collections "p1/pkg/tui/collections"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -34,4 +35,8 @@ func (st *ServersTab) View() string {
 func (st *ServersTab) Display() string {
 	count := st.collection.Count()
 	return "Servers " + count
+}
+
+func (st *ServersTab) Commands() []interfaces.FooterCommand {
+	return st.collection.Commands()
 }

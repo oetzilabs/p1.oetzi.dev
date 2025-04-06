@@ -1,6 +1,10 @@
 package tabs
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"p1/pkg/interfaces"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type AboutTab struct{}
 
@@ -26,4 +30,8 @@ func (at *AboutTab) View() string {
 
 func (at *AboutTab) Display() string {
 	return "About"
+}
+
+func (at *AboutTab) Commands() []interfaces.FooterCommand {
+	return []interfaces.FooterCommand{}
 }

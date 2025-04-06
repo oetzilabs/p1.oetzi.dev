@@ -1,6 +1,7 @@
 package models
 
 import (
+	"p1/pkg/interfaces"
 	"p1/pkg/tui/theme"
 	"p1/pkg/utils"
 
@@ -9,27 +10,26 @@ import (
 )
 
 type Footer struct {
-	Commands []FooterCommand
+	Commands []interfaces.FooterCommand
 	theme    *theme.Theme
 	error    *VisibleError
 	width    int
 	helper   string
 }
 
-type FooterCommand struct {
-	Key   string
-	Value string
+type FooterUpdate struct {
+	Content  string
+	Commands []interfaces.FooterCommand
 }
 
-type FooterUpdateHelperMsg struct {
-	Content string
-}
+var (
+	BaseCommands = []interfaces.FooterCommand{
+		{Key: "q", Value: "quit"},
+		{Key: "ctrl+k", Value: "Focus Sidebar"},
+	}
+)
 
-type FooterUpdateCommandsMsg struct {
-	Commands []FooterCommand
-}
-
-func NewFooter(theme *theme.Theme, commands []FooterCommand) *Footer {
+func NewFooter(theme *theme.Theme, commands []interfaces.FooterCommand) *Footer {
 	return &Footer{
 		theme:    theme,
 		Commands: commands,
@@ -46,19 +46,15 @@ func (f *Footer) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case VisibleError:
 		f.error = &msg
-	case FooterUpdateHelperMsg:
+	case FooterUpdate:
 		f.helper = msg.Content
-	case FooterUpdateCommandsMsg:
 		f.Commands = msg.Commands
 	}
 	return nil
 }
 
 func (f *Footer) ResetCommands() {
-	f.Commands = []FooterCommand{
-		{Key: "q", Value: "quit"},
-		{Key: "ctrl+k", Value: "Focus Sidebar"},
-	}
+	f.Commands = BaseCommands
 }
 
 func (f *Footer) View() string {
@@ -110,9 +106,12 @@ func (f *Footer) View() string {
 
 	lines = append(lines, content)
 
+	mergedCommands := BaseCommands
+	mergedCommands = append(mergedCommands, f.Commands...)
+
 	// Add other commands
 	commands := []string{}
-	for cmdIndex, cmd := range f.Commands {
+	for cmdIndex, cmd := range mergedCommands {
 		spacer := ""
 		if cmdIndex < len(f.Commands)-1 {
 			spacer = "|"

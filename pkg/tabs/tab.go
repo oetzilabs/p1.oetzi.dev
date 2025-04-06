@@ -32,9 +32,12 @@ func (t *Tab) Update(msg tea.Msg) tea.Cmd {
 	if t.Content == nil {
 		return nil
 	}
-	updateHelperMsg := tea.Cmd(func() tea.Msg { return models.FooterUpdateHelperMsg{Content: t.Helper} })
+	cmd := t.Content.Update(msg)
 
-	return tea.Batch(t.Content.Update(msg), updateHelperMsg)
+	updateHelperMsg := func() tea.Msg { return models.FooterUpdate{Content: t.Helper, Commands: t.Commands()} }
+	cmd = tea.Batch(cmd, updateHelperMsg)
+
+	return cmd
 }
 
 // View returns the tab's view
@@ -50,4 +53,13 @@ func (t *Tab) View() string {
 func (t *Tab) Display() string {
 
 	return t.Content.Display()
+}
+
+// Commands returns the tab's commands
+func (t *Tab) Commands() []interfaces.FooterCommand {
+	if t.Content == nil {
+		return []interfaces.FooterCommand{}
+	}
+
+	return t.Content.Commands()
 }

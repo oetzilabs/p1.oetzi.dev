@@ -1,6 +1,8 @@
 package tabs
 
 import (
+	"p1/pkg/interfaces"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -35,4 +37,8 @@ func (et *ExitTab) View() string {
 
 func (et *ExitTab) Display() string {
 	return "Exit (q)"
+}
+
+func (et *ExitTab) Commands() []interfaces.FooterCommand {
+	return []interfaces.FooterCommand{}
 }

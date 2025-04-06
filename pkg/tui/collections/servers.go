@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"p1/pkg/interfaces"
 	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -68,4 +69,10 @@ func (sc *ServerCollection) View() string {
 
 func (sc *ServerCollection) Count() string {
 	return fmt.Sprintf("(%d)", len(sc.servers))
+}
+
+func (sc *ServerCollection) Commands() []interfaces.FooterCommand {
+	return []interfaces.FooterCommand{
+		{Key: "ctrl+n", Value: "New Server"},
+	}
 }

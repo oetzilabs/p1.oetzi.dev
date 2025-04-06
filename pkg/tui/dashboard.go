@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"p1/pkg/interfaces"
 	"p1/pkg/models"
 	tabs "p1/pkg/tabs"
 	"p1/pkg/tui/theme"
@@ -39,11 +40,11 @@ var modifiedKeyMap = viewport.KeyMap{
 		key.WithHelp("ctrl+d", "½ page down"),
 	),
 	Up: key.NewBinding(
-		key.WithKeys("up"),
+		key.WithKeys("up", "k"),
 		key.WithHelp("↑", "up"),
 	),
 	Down: key.NewBinding(
-		key.WithKeys("down"),
+		key.WithKeys("down", "j"),
 		key.WithHelp("↓", "down"),
 	),
 }
@@ -58,7 +59,7 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 	aboutTab := tabs.NewAboutTab()
 	exitTab := tabs.NewExitTab()
 
-	footerCommands := []models.FooterCommand{}
+	footerCommands := []interfaces.FooterCommand{}
 
 	footer := models.NewFooter(theme, footerCommands)
 	footer.ResetCommands()
@@ -103,12 +104,15 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 		d.height = msg.Height
 		d.viewport.Width = msg.Width - d.sidebar.width
 		d.viewport.Height = msg.Height - lipgloss.Height(d.footer.View())
+		d.viewport.Style = d.viewport.Style.PaddingLeft(2).PaddingRight(2).PaddingTop(1)
 		d.footer.UpdateWidth(msg.Width - d.sidebar.width)
 	}
 
-	d.viewport.SetContent(d.sidebar.ViewSelectedTabContent())
+	d.viewport.SetContent(d.sidebar.SelectedTabContentView())
 	d.viewport.Width = d.width
 	d.viewport.Height = d.height - lipgloss.Height(d.footer.View())
+	d.viewport.Style.MaxHeight(d.height - lipgloss.Height(d.footer.View()))
+
 	var cmd2 tea.Cmd
 	d.viewport, cmd2 = d.viewport.Update(msg)
 	cmd = tea.Batch(cmd, cmd2)

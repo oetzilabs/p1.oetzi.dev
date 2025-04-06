@@ -1,4 +1,4 @@
-package tui
+package models
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
