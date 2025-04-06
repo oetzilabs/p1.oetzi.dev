@@ -93,6 +93,8 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 
 	d.viewport.KeyMap = modifiedKeyMap
 
+	mainScreenContent := d.sidebar.SelectedTabContentView()
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -102,23 +104,29 @@ func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		d.width = msg.Width
 		d.height = msg.Height
-		d.viewport.Width = msg.Width - d.sidebar.width
-		d.viewport.Height = msg.Height - lipgloss.Height(d.footer.View())
-		d.viewport.Style = d.viewport.Style.PaddingLeft(2).PaddingRight(2).PaddingTop(1)
+		d.updateViewport(d.width-d.sidebar.width, d.height-lipgloss.Height(d.footer.View()))
 		d.footer.UpdateWidth(msg.Width - d.sidebar.width)
 	}
-
-	d.viewport.SetContent(d.sidebar.SelectedTabContentView())
-	d.viewport.Width = d.width
-	d.viewport.Height = d.height - lipgloss.Height(d.footer.View())
-	d.viewport.Style.MaxHeight(d.height - lipgloss.Height(d.footer.View()))
+	d.viewport.SetContent(mainScreenContent)
 
 	var cmd2 tea.Cmd
 	d.viewport, cmd2 = d.viewport.Update(msg)
 	cmd = tea.Batch(cmd, cmd2)
+
 	d.hasScroll = d.viewport.VisibleLineCount() < d.viewport.TotalLineCount()
 
 	return cmd
+}
+
+func (d *Dashboard) updateViewport(width, height int) {
+	d.viewport.Width = width
+	d.viewport.Height = height
+	d.viewport.Style = d.viewport.Style.
+		PaddingLeft(2).
+		PaddingRight(2).
+		PaddingTop(1).
+		MaxHeight(height).
+		MaxWidth(width)
 }
 
 func (d *Dashboard) View() string {
@@ -129,19 +137,18 @@ func (d *Dashboard) View() string {
 	content := d.viewport.View()
 
 	var view string
-	if d.hasScroll {
-		view = lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			content,
-			d.theme.Base().Width(1).Render(),
-			d.getScrollbar(content),
-		)
-	} else {
-		view = lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			content,
-		)
-	}
+	view = lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		content,
+		d.getScrollbar(content),
+	)
+	// if d.hasScroll {
+	// } else {
+	// 	view = lipgloss.JoinHorizontal(
+	// 		lipgloss.Left,
+	// 		content,
+	// 	)
+	// }
 
 	mainContent := lipgloss.JoinVertical(
 		lipgloss.Top,
