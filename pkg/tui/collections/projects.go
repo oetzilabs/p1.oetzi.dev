@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"p1/pkg/interfaces"
 	models "p1/pkg/models"
+	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -19,7 +20,7 @@ func NewProjectCollection() *Projects {
 	return &Projects{
 		projects:    []*models.Project{},
 		selected:    0,
-		placeholder: "There are no projects yet, press 'n' to create a new one.",
+		placeholder: "There are no projects yet",
 	}
 }
 
@@ -39,7 +40,7 @@ func (pc *Projects) SelectProject(id string) {
 func (pc *Projects) RemoveProject(id string) {
 	for i, project := range pc.projects {
 		if project.ID == id {
-			pc.projects = append(pc.projects[:i], pc.projects[i+1:]...)
+			pc.projects = slices.Delete(pc.projects, i, i+1)
 			return
 		}
 	}
