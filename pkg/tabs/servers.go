@@ -12,7 +12,6 @@ type ServersTab struct {
 }
 
 func NewServersTab() Tab {
-
 	return Tab{
 		ID:     "servers",
 		Hidden: false,

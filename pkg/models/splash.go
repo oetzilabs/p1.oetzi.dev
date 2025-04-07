@@ -16,6 +16,7 @@ type Splash struct {
 	logo   *Logo
 	width  int
 	height int
+	error  *VisibleError
 }
 
 type DelayCompleteMsg struct{}
@@ -69,6 +70,8 @@ func (sp *Splash) UpdateSize(width, height int) {
 func (sp *Splash) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+	case VisibleError:
+		sp.error = &msg
 	case BrokerDataLoaded:
 		sp.data = true
 		cmds = append(cmds, sp.LoadCmds()...)
@@ -84,6 +87,10 @@ func (sp *Splash) Update(msg tea.Msg) tea.Cmd {
 
 func (sp *Splash) View() string {
 	var msg string
+
+	if sp.error != nil {
+		msg = sp.error.Message
+	}
 
 	return lipgloss.Place(
 		sp.width,

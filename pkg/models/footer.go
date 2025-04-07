@@ -1,9 +1,9 @@
 package models
 
 import (
+	"fmt"
 	"p1/pkg/interfaces"
 	"p1/pkg/tui/theme"
-	"p1/pkg/utils"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -71,37 +71,17 @@ func (f *Footer) View() string {
 
 	lines := []string{}
 
-	var content string
+	content := lipgloss.NewStyle().
+		Background(lipgloss.AdaptiveColor{Dark: "#000000", Light: "#FFFFFF"}).
+		Foreground(lipgloss.Color("#777777")).Render(f.helper + " ")
+
 	if f.error != nil {
-		hint := "esc"
-
-		// Calculate maximum width for error message to ensure it fits
-		maxErrorWidth := f.width - lipgloss.Width(hint) - 6
-
-		// Handle wrapping for long error messages
-		errorMsg := f.error.Message
-		if lipgloss.Width(errorMsg) > maxErrorWidth {
-			// Split into multiple lines
-			errorMsg = utils.WordWrap(errorMsg, maxErrorWidth)
-		}
-
-		msg := f.theme.PanelError().Padding(0, 1).Render(errorMsg)
-
-		// Calculate remaining space after rendering the message
-		space := max(0, f.width-lipgloss.Width(msg)-lipgloss.Width(hint)-2)
-
-		height := lipgloss.Height(msg)
-
-		content = lipgloss.JoinVertical(
-			lipgloss.Right,
-			msg,
-			f.theme.PanelError().Width(space).Height(height).Render(),
-			f.theme.PanelError().Bold(true).Padding(0, 1).Height(height).Render(hint),
+		errorString := fmt.Sprintf("Error: %s ", f.error.Message)
+		content = lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			f.theme.TextError().Render(errorString),
+			content,
 		)
-	} else {
-		content = lipgloss.NewStyle().
-			Background(lipgloss.AdaptiveColor{Dark: "#000000", Light: "#FFFFFF"}).
-			Foreground(lipgloss.Color("#777777")).Render(f.helper + " ")
 	}
 
 	lines = append(lines, content)
