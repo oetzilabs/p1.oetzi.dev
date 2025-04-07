@@ -50,6 +50,9 @@ const (
 	TypeListServices    MessageType = "LIST_SERVICES"
 	TypeRegisterService MessageType = "REGISTER_SERVICE"
 	TypeRemoveService   MessageType = "REMOVE_SERVICE"
+	TypeListBrokers     MessageType = "LIST_BROKERS"
+	TypeRegisterBroker  MessageType = "REGISTER_BROKER"
+	TypeRemoveBroker    MessageType = "REMOVE_BROKER"
 	TypeMetrics         MessageType = "METRICS"
 	TypeBroadcast       MessageType = "BROADCAST"
 )
@@ -242,5 +245,6 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Shutdown() {
+	slog.Info("Shutting down server")
 	s.cancel()
 }
