@@ -8,11 +8,13 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 
+	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	tabs "p1/pkg/tabs"
 )
 
 type Sidebar struct {
+	client       *client.Client
 	tabs         []tabs.Tab
 	activeTab    int
 	focused      bool
@@ -24,7 +26,7 @@ type Sidebar struct {
 
 type Tabs = []tabs.Tab
 
-func NewSidebar(tabs ...tabs.Tab) *Sidebar {
+func NewSidebar(client *client.Client, tabs ...tabs.Tab) *Sidebar {
 	ti := textinput.New()
 	ti.PromptStyle.MaxWidth(23)
 	ti.PromptStyle.Width(23)
@@ -32,6 +34,7 @@ func NewSidebar(tabs ...tabs.Tab) *Sidebar {
 	ti.Placeholder = "Search" + strings.Repeat(" ", 23-lipgloss.Width("Search"))
 
 	return &Sidebar{
+		client:       client,
 		tabs:         tabs,
 		activeTab:    0,
 		focused:      true,

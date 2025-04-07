@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	models "p1/pkg/models"
 	"slices"
@@ -14,13 +15,15 @@ type Projects struct {
 	projects    []*models.Project
 	selected    int
 	placeholder string
+	client      *client.Client
 }
 
-func NewProjectCollection() *Projects {
+func NewProjectCollection(client *client.Client) *Projects {
 	return &Projects{
 		projects:    []*models.Project{},
 		selected:    0,
 		placeholder: "There are no projects yet",
+		client:      client,
 	}
 }
 
@@ -47,6 +50,7 @@ func (pc *Projects) RemoveProject(id string) {
 }
 
 func (pc *Projects) Update(msg tea.Msg) tea.Cmd {
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {

@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	models "p1/pkg/models"
 
@@ -11,11 +12,13 @@ import (
 type BrokerCollection struct {
 	brokers  []*models.Broker
 	selected int
+	client   *client.Client
 }
 
-func NewBrokerCollection() *BrokerCollection {
+func NewBrokerCollection(client *client.Client) *BrokerCollection {
 	return &BrokerCollection{
 		brokers: []*models.Broker{},
+		client:  client,
 	}
 }
 

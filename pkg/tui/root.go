@@ -35,13 +35,11 @@ type model struct {
 	client    *client.Client
 }
 
-func NewModel(renderer *lipgloss.Renderer) (tea.Model, error) {
+func NewModel(renderer *lipgloss.Renderer, client *client.Client) (tea.Model, error) {
 	basicTheme := theme.BasicTheme(renderer, nil)
 
 	splash := models.NewSplash(&basicTheme)
-	dashboard := NewDashboard(&basicTheme)
-
-	client := client.NewClient()
+	dashboard := NewDashboard(&basicTheme, client)
 
 	result := model{
 		renderer:  renderer,
@@ -90,7 +88,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
@@ -120,7 +117,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-
 	var content string
 	switch m.page {
 	case splashPage:

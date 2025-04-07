@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	"p1/pkg/models"
 	tabs "p1/pkg/tabs"
@@ -20,6 +21,7 @@ type Dashboard struct {
 	viewport  viewport.Model
 	footer    *models.Footer
 	hasScroll bool
+	client    *client.Client
 }
 
 var modifiedKeyMap = viewport.KeyMap{
@@ -49,11 +51,11 @@ var modifiedKeyMap = viewport.KeyMap{
 	),
 }
 
-func NewDashboard(theme *theme.Theme) *Dashboard {
+func NewDashboard(theme *theme.Theme, client *client.Client) *Dashboard {
 	// main
-	projectsTab := tabs.NewProjectsTab()
-	serversTab := tabs.NewServersTab()
-	brokersTab := tabs.NewBrokersTab()
+	projectsTab := tabs.NewProjectsTab(client)
+	serversTab := tabs.NewServersTab(client)
+	brokersTab := tabs.NewBrokersTab(client)
 
 	// bottom
 	aboutTab := tabs.NewAboutTab()
@@ -68,8 +70,10 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 	vp.HighPerformanceRendering = false
 
 	return &Dashboard{
-		theme: theme,
+		client: client,
+		theme:  theme,
 		sidebar: NewSidebar(
+			client,
 			projectsTab,
 			serversTab,
 			brokersTab,

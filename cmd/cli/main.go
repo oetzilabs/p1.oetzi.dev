@@ -7,6 +7,7 @@ import (
 	"sync"
 	"syscall"
 
+	"p1/pkg/client"
 	"p1/pkg/config"
 	"p1/pkg/server"
 	"p1/pkg/tui"
@@ -76,9 +77,13 @@ func main() {
 		go func() {
 			defer wg.Done()
 			defer close(tuiDone)
-			model, err := tui.NewModel(lipgloss.DefaultRenderer())
+
+			client := client.NewClient()
+			defer client.WsClient.Conn.Close()
+
+			model, err := tui.NewModel(lipgloss.DefaultRenderer(), client)
 			if err != nil {
-				slog.Error("Error creating TUI", "error", err)
+				slog.Error("Error creating TUI", "error", err.Error())
 				os.Exit(1)
 			}
 

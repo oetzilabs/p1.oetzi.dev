@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -11,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -30,6 +30,7 @@ type ServerMetrics struct {
 }
 
 type Server struct {
+	ID         string
 	services   map[string]*Service
 	wsUpgrader *websocket.Upgrader
 	Address    string
@@ -91,6 +92,7 @@ func New(options ServerOptions) *Server {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Server{
+		ID:       uuid.New().String(),
 		services: make(map[string]*Service),
 		wsUpgrader: &websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
@@ -114,12 +116,10 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// add the client-id to the list of clients, so we can track them.
 	// the client-id is being send with the websocket-handshake
-	clientId := r.Header.Get("X-Client-ID")
+	clientId := r.URL.Query().Get("CID")
+
 	if clientId != "" {
 		s.clients = append(s.clients, &clientId)
-	} else {
-		slog.Error("Client-ID not found in websocket-handshake", "error", errors.New("Client-ID not found"))
-		return
 	}
 
 	// Send periodic health updates

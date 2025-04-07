@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	models "p1/pkg/models"
 
@@ -11,11 +12,13 @@ import (
 type ServerCollection struct {
 	servers  []*models.Server
 	selected int
+	client   *client.Client
 }
 
-func NewServerCollection() *ServerCollection {
+func NewServerCollection(client *client.Client) *ServerCollection {
 	return &ServerCollection{
 		servers: []*models.Server{},
+		client:  client,
 	}
 }
 
@@ -42,6 +45,7 @@ func (sc *ServerCollection) RemoveServer(id string) {
 }
 
 func (sc *ServerCollection) Update(msg tea.Msg) tea.Cmd {
+	// sc.servers = sc.client.GetServers()
 	parentMsg := msg
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

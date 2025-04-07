@@ -1,6 +1,7 @@
 package tabs
 
 import (
+	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	collections "p1/pkg/tui/collections"
 
@@ -11,14 +12,14 @@ type ProjectsTab struct {
 	collection *collections.Projects
 }
 
-func NewProjectsTab() Tab {
+func NewProjectsTab(client *client.Client) Tab {
 
 	return Tab{
 		ID:     "projects",
 		Hidden: false,
 		Group:  AlignTop,
 		Content: &ProjectsTab{
-			collection: collections.NewProjectCollection(),
+			collection: collections.NewProjectCollection(client),
 		},
 		Helper: "Here you can see all the projects that are on your network.",
 	}

@@ -2,171 +2,97 @@ package client
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
-	"p1/pkg/broker"
+	"log/slog"
 	"p1/pkg/server"
 
 	"github.com/gorilla/websocket"
 )
 
-type WebsocketServer struct {
-	ID       string
+type WebsocketClient struct {
 	link     string
-	status   ServerStatus
+	status   WebsocketServerStatus
 	services []*server.Service
-	brokers  []*broker.Broker
+	brokers  []string
+	Conn     *websocket.Conn
 }
 
-type ServerStatus string
+type WebsocketServerStatus string
 
 const (
-	StatusOK                 ServerStatus = "OK"
-	StatusWarning            ServerStatus = "WARNING"
-	StatusCritical           ServerStatus = "CRITICAL"
-	StatusNotEnoughResources ServerStatus = "NOT_ENOUGH_RESOURCES"
-	StatusMissingLink        ServerStatus = "MISSING_LINK"
-	StatusUnknown            ServerStatus = "UNKNOWN"
+	WebsocketStatusOK                 WebsocketServerStatus = "OK"
+	WebsocketStatusWarning            WebsocketServerStatus = "WARNING"
+	WebsocketStatusCritical           WebsocketServerStatus = "CRITICAL"
+	WebsocketStatusNotEnoughResources WebsocketServerStatus = "NOT_ENOUGH_RESOURCES"
+	WebsocketStatusMissingLink        WebsocketServerStatus = "MISSING_LINK"
+	WebsocketStatusUnknown            WebsocketServerStatus = "UNKNOWN"
 )
 
-func isAcceptableStatus(status ServerStatus) bool {
-	switch status {
-	case StatusOK:
-		return true
-	case StatusWarning:
-		return true
-	case StatusCritical:
-		return false
-	case StatusNotEnoughResources:
-		return false
-	case StatusMissingLink:
-		return false
-	default:
-		return false
+func (ws *WebsocketClient) Update() error {
+	if ws.Conn == nil {
+		return fmt.Errorf("no websocket available")
 	}
-}
-
-func (ws *WebsocketServer) StatusCheck() ServerStatus {
-	if ws.link == "" {
-		return StatusMissingLink
-	}
-
-	// Parse the URL
-	u, err := url.Parse(ws.link)
-	if err != nil {
-		return StatusCritical
-	}
-
-	// Try HTTP connection first
-	client := http.Client{
-		Timeout: DEFAULT_TIMEOUT,
-	}
-	_, err = client.Get(fmt.Sprintf("http://%s", u.Host))
-	if err != nil {
-		return StatusCritical
-	}
-
-	// Try WebSocket connection
-	dialer := websocket.Dialer{
-		HandshakeTimeout: DEFAULT_TIMEOUT,
-	}
-	c, _, err := dialer.Dial(ws.link, nil)
-	if err != nil {
-		return StatusWarning // Server is up but WebSocket failed
-	}
-	defer c.Close()
-
-	return StatusOK
-}
-
-func (ws *WebsocketServer) Update() error {
-	if ws.link == "" {
-		return fmt.Errorf("link is empty")
-	}
-
-	// Parse the URL
-	_, err := url.Parse(ws.link)
-	if err != nil {
-		return fmt.Errorf("invalid link: %v", err)
-	}
-
-	// Connect via temporary WebSocket
-	dialer := websocket.Dialer{
-		HandshakeTimeout: DEFAULT_TIMEOUT,
-	}
-	c, _, err := dialer.Dial(ws.link, nil)
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-
-	ws.status = ws.StatusCheck()
-
+	// if ws.Conn == nil {
+	// 	// first create the connection
+	// 	dialer := websocket.Dialer{
+	// 		HandshakeTimeout: DEFAULT_TIMEOUT,
+	// 	}
+	// 	connection, _, err := dialer.Dial(ws.link, nil)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	ws.Conn = connection
+	// 	// defer connection.Close()
+	// }
 	// Send request for Services
 	msg := server.Message{
 		Type:    server.TypeListServices,
 		Payload: nil,
 	}
-	if err := c.WriteJSON(msg); err != nil {
+	if err := ws.Conn.WriteJSON(msg); err != nil {
 		return err
 	}
 
-	if err := c.ReadJSON(&msg); err != nil {
+	if err := ws.Conn.ReadJSON(&msg); err != nil {
 		return err
 	}
 
-	services := []*server.Service{}
-	tempServices := msg.Payload.([]*server.Service)
-	for _, svc := range tempServices {
-		if !ws.hasService(svc.ID) {
-			if svc.Endpoint != "" {
-				services = append(services, svc)
-			}
-		}
-	}
-	ws.services = services
+	ws.services = msg.Payload.([]*server.Service)
 
-	// Send request for Services
+	// Send request for Brokers
 	msg = server.Message{
 		Type:    server.TypeListBrokers,
 		Payload: nil,
 	}
-	if err := c.WriteJSON(msg); err != nil {
+	if err := ws.Conn.WriteJSON(msg); err != nil {
 		return err
 	}
 
-	if err := c.ReadJSON(&msg); err != nil {
+	if err := ws.Conn.ReadJSON(&msg); err != nil {
 		return err
 	}
 
-	brokers := []*broker.Broker{}
-	tempBrokers := msg.Payload.([]*broker.Broker)
-	for _, brk := range tempBrokers {
-		if !ws.hasBroker(brk.ID) {
-			if brk.URL != "" {
-				brokers = append(brokers, brk)
-			}
-		}
-	}
-	ws.brokers = brokers
+	ws.brokers = msg.Payload.([]string)
 
 	return nil
 }
 
-func (ws *WebsocketServer) hasService(id string) bool {
-	for _, svc := range ws.services {
-		if svc.ID == id {
-			return true
-		}
+func NewWebsocketClient(link string) *WebsocketClient {
+	return &WebsocketClient{
+		link:     link,
+		services: []*server.Service{},
+		brokers:  []string{},
+		status:   WebsocketStatusUnknown,
 	}
-	return false
 }
 
-func (ws *WebsocketServer) hasBroker(id string) bool {
-	for _, brk := range ws.brokers {
-		if brk.ID == id {
-			return true
-		}
+func (ws *WebsocketClient) CreateConnection() {
+	dialer := websocket.Dialer{
+		HandshakeTimeout: DEFAULT_TIMEOUT,
 	}
-	return false
+	connection, _, err := dialer.Dial(ws.link, nil)
+	if err != nil {
+		slog.Error("Error creating websocket connection", "error", err.Error())
+		return
+	}
+	ws.Conn = connection
 }
