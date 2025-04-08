@@ -2,9 +2,11 @@ package tui
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"p1/pkg/client"
+	"p1/pkg/messages"
 	"p1/pkg/models"
 	"p1/pkg/tui/theme"
 
@@ -18,8 +20,6 @@ const (
 	splashPage page = iota
 	dashboardPage
 )
-
-type SyncMsg time.Time
 
 type model struct {
 	switched  bool
@@ -39,7 +39,7 @@ func NewModel(renderer *lipgloss.Renderer, client *client.Client) (tea.Model, er
 	basicTheme := theme.BasicTheme(renderer, nil)
 
 	splash := models.NewSplash(&basicTheme)
-	dashboard := NewDashboard(&basicTheme, client)
+	dashboard := NewDashboard(&basicTheme)
 
 	result := model{
 		renderer:  renderer,
@@ -56,21 +56,16 @@ func NewModel(renderer *lipgloss.Renderer, client *client.Client) (tea.Model, er
 	return result, nil
 }
 
-func doSyncTick(client *client.Client) tea.Cmd {
-	return tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
-		err := client.Sync()
-		if err != nil {
-			return tea.Batch(
-				func() tea.Msg { return models.VisibleError{Message: err.Error()} },
-				func() tea.Msg { return SyncMsg(t) },
-			)()
-		}
-		return SyncMsg(t)
+func (m *model) doSyncTick(client *client.Client) tea.Cmd {
+	return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+		slog.Info("Pulling")
+		state := client.Pull()
+		return messages.SyncMsg(state)
 	})
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(m.splash.Init(), doSyncTick(m.client))
+	return tea.Batch(m.splash.Init(), m.doSyncTick(m.client))
 }
 
 func (m model) SwitchPage(page page) model {
@@ -83,8 +78,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 
 	switch msg := msg.(type) {
-	case SyncMsg:
-		return m, doSyncTick(m.client)
+	case messages.SyncMsg:
+		return m, m.doSyncTick(m.client)
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height

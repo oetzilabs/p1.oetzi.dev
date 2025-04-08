@@ -2,8 +2,8 @@ package tui
 
 import (
 	"fmt"
-	"p1/pkg/client"
 	"p1/pkg/interfaces"
+	"p1/pkg/messages"
 	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,13 +12,11 @@ import (
 type ServerCollection struct {
 	servers  []*models.Server
 	selected int
-	client   *client.Client
 }
 
-func NewServerCollection(client *client.Client) *ServerCollection {
+func NewServerCollection() *ServerCollection {
 	return &ServerCollection{
 		servers: []*models.Server{},
-		client:  client,
 	}
 }
 
@@ -48,6 +46,8 @@ func (sc *ServerCollection) Update(msg tea.Msg) tea.Cmd {
 	// sc.servers = sc.client.GetServers()
 	parentMsg := msg
 	switch msg := msg.(type) {
+	case messages.SyncMsg:
+		sc.servers = msg.Servers
 	case tea.KeyMsg:
 		switch msg.String() {
 

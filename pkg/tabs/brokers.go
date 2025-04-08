@@ -1,7 +1,6 @@
 package tabs
 
 import (
-	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	collections "p1/pkg/tui/collections"
 
@@ -12,14 +11,14 @@ type BrokersTab struct {
 	collection *collections.BrokerCollection
 }
 
-func NewBrokersTab(client *client.Client) Tab {
+func NewBrokersTab() Tab {
 
 	return Tab{
 		ID:     "brokers",
 		Hidden: false,
 		Group:  AlignTop,
 		Content: &BrokersTab{
-			collection: collections.NewBrokerCollection(client),
+			collection: collections.NewBrokerCollection(),
 		},
 		Helper: "Here you can see all the brokers that are currently connected to the network.",
 	}

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"p1/pkg/messages"
 	"strconv"
 	"sync"
 	"time"
@@ -34,6 +35,7 @@ type Server struct {
 	services   map[string]*Service
 	wsUpgrader *websocket.Upgrader
 	Address    string
+	WSLink     string
 	mu         sync.RWMutex
 	srv        *http.Server
 	ctx        context.Context
@@ -43,25 +45,6 @@ type Server struct {
 
 type ServerOptions struct {
 	Port string
-}
-
-type MessageType string
-
-const (
-	TypeListServices    MessageType = "LIST_SERVICES"
-	TypeRegisterService MessageType = "REGISTER_SERVICE"
-	TypeRemoveService   MessageType = "REMOVE_SERVICE"
-	TypeListBrokers     MessageType = "LIST_BROKERS"
-	TypeRegisterBroker  MessageType = "REGISTER_BROKER"
-	TypeRemoveBroker    MessageType = "REMOVE_BROKER"
-	TypeMetrics         MessageType = "METRICS"
-	TypeBroadcast       MessageType = "BROADCAST"
-)
-
-type Message struct {
-	Type    MessageType `json:"type"`
-	Payload interface{} `json:"payload"`
-	Sender  string      `json:"sender"`
 }
 
 func findOpenPort() string {
@@ -100,6 +83,7 @@ func New(options ServerOptions) *Server {
 			},
 		},
 		Address: fmt.Sprintf("localhost:%s", port),
+		WSLink:  fmt.Sprintf("ws://localhost:%s/ws", port),
 		ctx:     ctx,
 		cancel:  cancel,
 		clients: []*string{},
@@ -116,7 +100,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// add the client-id to the list of clients, so we can track them.
 	// the client-id is being send with the websocket-handshake
-	clientId := r.URL.Query().Get("CID")
+	clientId := r.Header.Get("CID")
 
 	if clientId != "" {
 		s.clients = append(s.clients, &clientId)
@@ -134,9 +118,10 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				Storage: 70.0,
 				Network: 80.0,
 			}
-			msg := Message{
-				Type:    TypeMetrics,
+			msg := messages.Message{
+				Type:    messages.TypeMetrics,
 				Payload: metrics,
+				Sender:  s.ID,
 			}
 			if err := conn.WriteJSON(msg); err != nil {
 				return
@@ -145,14 +130,14 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	for {
-		var msg Message
+		var msg messages.Message
 		if err := conn.ReadJSON(&msg); err != nil {
 			slog.Error("read error:" + err.Error())
 			return
 		}
 
 		switch msg.Type {
-		case TypeListServices:
+		case messages.TypeListServices:
 			s.mu.RLock()
 			services := make([]*Service, 0, len(s.services))
 			for _, svc := range s.services {
@@ -160,13 +145,13 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 			s.mu.RUnlock()
 
-			response := Message{
-				Type:    TypeListServices,
+			response := messages.Message{
+				Type:    messages.TypeListServices,
 				Payload: services,
 			}
 			conn.WriteJSON(response)
 
-		case TypeRegisterService:
+		case messages.TypeRegisterService:
 			if service, ok := msg.Payload.(map[string]interface{}); ok {
 				// Convert map to Service struct
 				svc := &Service{
@@ -187,13 +172,13 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				s.mu.Unlock()
 			}
 
-		case TypeRemoveService:
+		case messages.TypeRemoveService:
 			if id, ok := msg.Payload.(string); ok {
 				s.mu.Lock()
 				delete(s.services, id)
 				s.mu.Unlock()
 			}
-		case TypeBroadcast:
+		case messages.TypeBroadcast:
 			if msg.Payload == nil {
 				slog.Error("msg.Payload is nil")
 				return
@@ -203,8 +188,8 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				if clientId != nil {
 					// broadcast to all clients except the sender
 					if *clientId != msg.Sender {
-						msg := Message{
-							Type:    TypeBroadcast,
+						msg := messages.Message{
+							Type:    messages.TypeBroadcast,
 							Payload: payload,
 							Sender:  *clientId,
 						}
@@ -240,7 +225,6 @@ func (s *Server) Start() error {
 	if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
 		return err
 	}
-	slog.Info("Running server", "address", s.Address)
 	return nil
 }
 

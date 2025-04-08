@@ -38,6 +38,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	var srv *server.Server
+	var cl *client.Client
 	if config.WithServer {
 		wg.Add(1)
 		serverOptions := server.ServerOptions{
@@ -47,7 +48,6 @@ func main() {
 
 		go func() {
 			defer wg.Done()
-			slog.Info("Starting server", "address", srv.Address)
 			if err := srv.Start(); err != nil {
 				slog.Error("Error starting server", "error", err)
 				os.Exit(1)
@@ -66,6 +66,12 @@ func main() {
 		if srv != nil {
 			srv.Shutdown()
 		}
+		if cl != nil {
+			err := cl.Stop()
+			if err != nil {
+				slog.Error("Error stopping client", "error", err.Error())
+			}
+		}
 		// Ensure clean exit
 		if config.WithTui {
 			os.Exit(0)
@@ -78,10 +84,19 @@ func main() {
 			defer wg.Done()
 			defer close(tuiDone)
 
-			client := client.NewClient()
-			defer client.WsClient.Conn.Close()
+			cl = client.NewClient(srv.WSLink)
+			err := cl.Init()
+			if err != nil {
+				slog.Error("Error initializing client", "error", err.Error())
+				os.Exit(1)
+			}
+			err = cl.Start()
+			if err != nil {
+				slog.Error("Error starting client", "error", err.Error())
+				os.Exit(1)
+			}
 
-			model, err := tui.NewModel(lipgloss.DefaultRenderer(), client)
+			model, err := tui.NewModel(lipgloss.DefaultRenderer(), cl)
 			if err != nil {
 				slog.Error("Error creating TUI", "error", err.Error())
 				os.Exit(1)

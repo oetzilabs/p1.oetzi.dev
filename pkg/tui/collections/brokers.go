@@ -2,8 +2,8 @@ package tui
 
 import (
 	"fmt"
-	"p1/pkg/client"
 	"p1/pkg/interfaces"
+	"p1/pkg/messages"
 	models "p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,13 +12,11 @@ import (
 type BrokerCollection struct {
 	brokers  []*models.Broker
 	selected int
-	client   *client.Client
 }
 
-func NewBrokerCollection(client *client.Client) *BrokerCollection {
+func NewBrokerCollection() *BrokerCollection {
 	return &BrokerCollection{
 		brokers: []*models.Broker{},
-		client:  client,
 	}
 }
 
@@ -47,6 +45,8 @@ func (bc *BrokerCollection) RemoveBroker(id string) {
 func (bc *BrokerCollection) Update(msg tea.Msg) tea.Cmd {
 	parentMsg := msg
 	switch msg := msg.(type) {
+	case messages.SyncMsg:
+		bc.brokers = msg.Brokers
 	case tea.KeyMsg:
 		switch msg.String() {
 
