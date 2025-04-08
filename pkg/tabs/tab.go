@@ -2,6 +2,7 @@ package tabs
 
 import (
 	interfaces "p1/pkg/interfaces"
+	"p1/pkg/messages"
 	"p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -62,4 +63,11 @@ func (t *Tab) Commands() []interfaces.FooterCommand {
 	}
 
 	return t.Content.Commands()
+}
+
+func (t *Tab) SendMessage(msg messages.Message) {
+	if t.Content == nil {
+		return
+	}
+	t.Content.Update(msg)
 }

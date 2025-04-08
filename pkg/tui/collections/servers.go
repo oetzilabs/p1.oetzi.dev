@@ -46,8 +46,16 @@ func (sc *ServerCollection) Update(msg tea.Msg) tea.Cmd {
 	// sc.servers = sc.client.GetServers()
 	parentMsg := msg
 	switch msg := msg.(type) {
-	case messages.SyncMsg:
-		sc.servers = msg.Servers
+
+	case messages.Message:
+		switch msg.Type {
+		case messages.TypeListServices:
+			sc.servers = msg.Payload.([]*models.Server)
+		case messages.TypeRegisterService:
+			sc.AddServer(msg.Payload.(*models.Server))
+		case messages.TypeRemoveService:
+			sc.RemoveServer(msg.Payload.(string))
+		}
 	case tea.KeyMsg:
 		switch msg.String() {
 

@@ -26,7 +26,6 @@ type model struct {
 	renderer  *lipgloss.Renderer
 	page      page
 	dashboard *Dashboard
-	splash    *models.Splash
 	context   context.Context
 	theme     theme.Theme
 	error     *models.VisibleError
@@ -38,15 +37,13 @@ type model struct {
 func NewModel(renderer *lipgloss.Renderer, client *client.Client) (tea.Model, error) {
 	basicTheme := theme.BasicTheme(renderer, nil)
 
-	splash := models.NewSplash(&basicTheme)
 	dashboard := NewDashboard(&basicTheme)
 
 	result := model{
 		renderer:  renderer,
 		context:   context.Background(),
 		theme:     basicTheme,
-		page:      splashPage,
-		splash:    splash,
+		page:      dashboardPage,
 		dashboard: dashboard,
 		width:     0,
 		height:    0,
@@ -60,12 +57,15 @@ func (m *model) doSyncTick(client *client.Client) tea.Cmd {
 	return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
 		slog.Info("Pulling")
 		state := client.Pull()
+		m.dashboard.SendMessageToTab("servers", messages.Message{Type: messages.TypeListServices, Payload: state.Servers})
+		m.dashboard.SendMessageToTab("brokers", messages.Message{Type: messages.TypeListBrokers, Payload: state.Brokers})
+		m.dashboard.SendMessageToTab("projects", messages.Message{Type: messages.TypeListProjects, Payload: state.Projects})
 		return messages.SyncMsg(state)
 	})
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(m.splash.Init(), m.doSyncTick(m.client))
+	return tea.Batch(m.doSyncTick(m.client))
 }
 
 func (m model) SwitchPage(page page) model {
@@ -96,13 +96,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	cmds = append(cmds, m.splash.Update(msg))
 	cmds = append(cmds, m.dashboard.Update(msg))
-
-	if m.splash.IsLoadingComplete() && m.page == splashPage {
-		m = m.SwitchPage(dashboardPage)
-		return m, tea.Batch(cmds...)
-	}
 
 	if m.switched {
 		m.switched = false
@@ -112,13 +106,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	var content string
-	switch m.page {
-	case splashPage:
-		content = m.splash.View()
-	case dashboardPage:
-		content = m.dashboard.View()
-	}
+	var content string = m.dashboard.View()
 
 	return m.renderer.Place(
 		m.width,

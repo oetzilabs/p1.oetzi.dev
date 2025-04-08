@@ -2,6 +2,7 @@ package tui
 
 import (
 	"p1/pkg/interfaces"
+	"p1/pkg/messages"
 	"p1/pkg/models"
 	tabs "p1/pkg/tabs"
 	"p1/pkg/tui/theme"
@@ -84,12 +85,6 @@ func NewDashboard(theme *theme.Theme) *Dashboard {
 func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
 	cmd := d.sidebar.Update(msg)
 	cmd = tea.Batch(cmd, d.footer.Update(msg))
-
-	// if d.hasScroll {
-	// 	d.width = d.width - 4
-	// } else {
-	// 	d.width = d.width - 0
-	// }
 
 	d.viewport.KeyMap = modifiedKeyMap
 
@@ -177,4 +172,8 @@ func (d *Dashboard) getScrollbar(content string) string {
 	style := d.theme.Base().Width(1).Height(vh)
 
 	return style.Render(lipgloss.PlaceVertical(vh, lipgloss.Position(nYP), bar))
+}
+
+func (d *Dashboard) SendMessageToTab(tabID string, msg messages.Message) {
+	d.sidebar.SendMessageToTab(tabID, msg)
 }

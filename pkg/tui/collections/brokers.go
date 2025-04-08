@@ -45,8 +45,15 @@ func (bc *BrokerCollection) RemoveBroker(id string) {
 func (bc *BrokerCollection) Update(msg tea.Msg) tea.Cmd {
 	parentMsg := msg
 	switch msg := msg.(type) {
-	case messages.SyncMsg:
-		bc.brokers = msg.Brokers
+	case messages.Message:
+		switch msg.Type {
+		case messages.TypeListBrokers:
+			bc.brokers = msg.Payload.([]*models.Broker)
+		case messages.TypeRegisterBroker:
+			bc.AddBroker(msg.Payload.(*models.Broker))
+		case messages.TypeRemoveBroker:
+			bc.RemoveBroker(msg.Payload.(string))
+		}
 	case tea.KeyMsg:
 		switch msg.String() {
 

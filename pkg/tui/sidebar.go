@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 
 	"p1/pkg/interfaces"
+	"p1/pkg/messages"
 	tabs "p1/pkg/tabs"
 )
 
@@ -237,4 +238,13 @@ func (s *Sidebar) SelectedTabContentCommands() []interfaces.FooterCommand {
 	}
 
 	return s.tabsToRender[s.activeTab].Commands()
+}
+
+func (s *Sidebar) SendMessageToTab(tabID string, msg messages.Message) {
+	for _, tab := range s.tabsToRender {
+		if tab.ID == tabID {
+			tab.SendMessage(msg)
+			return
+		}
+	}
 }

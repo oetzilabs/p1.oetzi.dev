@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	"p1/pkg/messages"
 	models "p1/pkg/models"
@@ -16,7 +15,6 @@ type Projects struct {
 	projects    []*models.Project
 	selected    int
 	placeholder string
-	client      *client.Client
 }
 
 func NewProjectCollection() *Projects {
@@ -52,8 +50,15 @@ func (pc *Projects) RemoveProject(id string) {
 func (pc *Projects) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
-	case messages.SyncMsg:
-		pc.projects = msg.Projects
+	case messages.Message:
+		switch msg.Type {
+		case messages.TypeListProjects:
+			pc.projects = msg.Payload.([]*models.Project)
+		case messages.TypeRegisterProjects:
+			pc.AddProject(msg.Payload.(*models.Project))
+		case messages.TypeRemoveProjects:
+			pc.RemoveProject(msg.Payload.(string))
+		}
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+n":
