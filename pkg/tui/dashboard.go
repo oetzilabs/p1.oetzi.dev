@@ -136,19 +136,11 @@ func (d *Dashboard) View() string {
 
 	content := d.viewport.View()
 
-	var view string
-	view = lipgloss.JoinHorizontal(
+	view := lipgloss.JoinHorizontal(
 		lipgloss.Left,
 		content,
 		d.getScrollbar(content),
 	)
-	// if d.hasScroll {
-	// } else {
-	// 	view = lipgloss.JoinHorizontal(
-	// 		lipgloss.Left,
-	// 		content,
-	// 	)
-	// }
 
 	mainContent := lipgloss.JoinVertical(
 		lipgloss.Top,
