@@ -8,13 +8,11 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 
-	"p1/pkg/client"
 	"p1/pkg/interfaces"
 	tabs "p1/pkg/tabs"
 )
 
 type Sidebar struct {
-	client       *client.Client
 	tabs         []tabs.Tab
 	activeTab    int
 	focused      bool
