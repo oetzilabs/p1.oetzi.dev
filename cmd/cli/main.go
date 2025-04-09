@@ -96,12 +96,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			model, err := tui.NewModel(lipgloss.DefaultRenderer(), cl)
-			if err != nil {
-				slog.Error("Error creating TUI", "error", err.Error())
-				os.Exit(1)
-			}
-
+			model := tui.NewModel(lipgloss.DefaultRenderer(), cl)
 			if _, err := tea.NewProgram(model, tea.WithAltScreen()).Run(); err != nil {
 				slog.Error("Error running TUI", "error", err)
 				os.Exit(1)

@@ -64,7 +64,7 @@ type model struct {
 	sidebarWidth   int
 }
 
-func NewModel(renderer *lipgloss.Renderer, client *client.Client) (tea.Model, error) {
+func NewModel(renderer *lipgloss.Renderer, client *client.Client) tea.Model {
 	basicTheme := theme.BasicTheme(renderer, nil)
 
 	// main
@@ -112,7 +112,7 @@ func NewModel(renderer *lipgloss.Renderer, client *client.Client) (tea.Model, er
 		sidebarWidth:   30,
 	}
 
-	return result, nil
+	return result
 }
 
 func (m model) Init() tea.Cmd {
