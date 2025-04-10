@@ -75,7 +75,7 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 				PaddingLeft(2).
 				PaddingRight(2).
 				PaddingTop(1).
-				MaxHeight(msg.Height)
+				MaxHeight(msg.Height - s.footerHeight)
 			s.ready = true
 			s.viewport.KeyMap = modifiedKeyMap
 		} else {
@@ -90,7 +90,7 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 
 func (s *Screen) View() string {
 	content := s.viewport.View()
-	return lipgloss.JoinHorizontal(
+	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		content,
 		s.getScrollbar(content),
