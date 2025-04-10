@@ -23,3 +23,9 @@ func NewVisibleError(message string) VisibleError {
 		Message: message,
 	}
 }
+
+type InternalWindowSizeMsg struct {
+	Width     int
+	Height    int
+	MenuWidth int
+}

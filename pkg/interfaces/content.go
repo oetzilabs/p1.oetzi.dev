@@ -13,3 +13,8 @@ type Content interface {
 	Display() string
 	Commands() []FooterCommand
 }
+
+type ScreenContent interface {
+	Update(msg tea.Msg) tea.Cmd
+	View() string
+}

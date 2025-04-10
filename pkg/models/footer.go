@@ -38,14 +38,12 @@ func NewFooter(theme *theme.Theme, commands []interfaces.FooterCommand) *Footer 
 	}
 }
 
-func (f *Footer) UpdateWidth(width int) {
-	f.width = width
-}
-
 func (f *Footer) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case VisibleError:
 		f.error = &msg
+	case InternalWindowSizeMsg:
+		f.width = msg.Width - msg.MenuWidth
 	case FooterUpdate:
 		f.helper = msg.Content
 		f.Commands = msg.Commands

@@ -75,7 +75,7 @@ func FilterTabs(tabs Tabs, search string) Tabs {
 	return tabsToRender
 }
 
-func FilterTabsGroup(tabs Tabs, group tabs.TabGroup) Tabs {
+func FilterTabsGroup(tabs Tabs, group tabs.TabPosition) Tabs {
 	var tabsToRender Tabs
 	for _, tab := range tabs {
 		if tab.Group == group {

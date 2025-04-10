@@ -2,7 +2,6 @@ package tabs
 
 import (
 	interfaces "p1/pkg/interfaces"
-	"p1/pkg/messages"
 	"p1/pkg/models"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,7 +11,7 @@ import (
 type Tab struct {
 	ID           string
 	Hidden       bool
-	Group        TabGroup
+	Group        TabPosition
 	Content      interfaces.Content
 	Helper       string
 	IgnoreSearch bool
@@ -63,11 +62,4 @@ func (t *Tab) Commands() []interfaces.FooterCommand {
 	}
 
 	return t.Content.Commands()
-}
-
-func (t *Tab) SendMessage(msg messages.Message) {
-	if t.Content == nil {
-		return
-	}
-	t.Content.Update(msg)
 }
