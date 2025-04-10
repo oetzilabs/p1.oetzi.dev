@@ -1,7 +1,6 @@
 package menu
 
 import (
-	"log/slog"
 	"p1/pkg/models"
 	"p1/pkg/screens"
 	"strings"
@@ -64,7 +63,7 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 		m.height = msg.Height
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "/":
+		case "?":
 			if m.focused && !m.search.Focused() {
 				m.search.Focus()
 			}
@@ -120,26 +119,37 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (m *Menu) View() string {
+	menuItemStyle := lipgloss.NewStyle().
+		Background(lipgloss.Color("#222222")).Width(m.width)
+	menuStyle := lipgloss.NewStyle().
+		Background(lipgloss.Color("#222222")).Padding(1).Width(m.width - 2)
+
 	var content string
 
 	// Add the search bar
-	content += m.search.View() + "\n"
+	content += m.search.View() + "\n\n"
 
 	// Add menu items
 	for itemIndex, item := range m.items {
-		content += m.formatItem(item.title+"\n", itemIndex == m.selectedItemIndex)
+		var newLine string
+		if itemIndex < len(m.items)-1 {
+			newLine = "\n"
+		} else {
+			newLine = ""
+		}
+		content += menuItemStyle.Render(m.formatItem(item.title, itemIndex == m.selectedItemIndex)) + newLine
 	}
 
+	var fillercontent string
 	// Calculate remaining height and add filler
 	currentHeight := lipgloss.Height(content)
 	if currentHeight < m.height {
-		slog.Info("adding filler", "height", m.height, "currentHeight", currentHeight)
 		fillerHeight := m.height - currentHeight
-		filler := strings.Repeat(" \n", fillerHeight)
-		content += filler
+		filler := strings.Repeat(strings.Repeat(" ", m.width)+"\n", fillerHeight)
+		fillercontent += menuItemStyle.Render(filler) + "\n"
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Top, content)
+	return menuStyle.Render(lipgloss.JoinVertical(lipgloss.Top, content, fillercontent))
 }
 
 func (m *Menu) Screen() string {
@@ -169,16 +179,11 @@ func (m *Menu) IsFocused() bool {
 func (m *Menu) formatItem(display string, active bool) string {
 	parts := strings.SplitN(display, " ", 2)
 	title := parts[0]
-	info := ""
-	if len(parts) > 1 {
-		info = parts[1]
-	}
-
-	sidebarWidth := m.width - 7 // Account for padding and cursor
-	spaceWidth := max(1, sidebarWidth-lipgloss.Width(title)-lipgloss.Width(info))
+	sidebarWidth := m.width
+	spaceWidth := max(1, sidebarWidth-lipgloss.Width(title))
 	spacing := strings.Repeat(" ", spaceWidth)
 
-	content := title + spacing + info
+	content := title + spacing
 	if active {
 		if m.focused {
 			return lipgloss.NewStyle().
