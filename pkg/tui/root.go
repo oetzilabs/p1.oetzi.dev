@@ -49,26 +49,27 @@ func NewModel(renderer *lipgloss.Renderer) tea.Model {
 }
 
 func (m model) Init() tea.Cmd {
-	return nil
+	return func() tea.Msg { return tea.DisableMouse() }
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 	parentMsg := msg
+	cmds = append(cmds, m.menu.Update(parentMsg))
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
 		cmds = append(cmds, func() tea.Msg {
 			return models.InternalWindowSizeMsg{
-				Width:     msg.Width,
-				Height:    msg.Height,
-				MenuWidth: m.menu.GetWidth(),
+				Width:        msg.Width,
+				Height:       msg.Height,
+				MenuWidth:    m.menu.GetWidth(),
+				FooterHeight: lipgloss.Height(m.footer.View()),
 			}
 		})
 	}
 
-	cmds = append(cmds, m.menu.Update(parentMsg))
 	cmds = append(cmds, m.footer.Update(parentMsg))
 
 	return m, tea.Batch(cmds...)
