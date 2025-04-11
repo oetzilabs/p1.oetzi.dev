@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/google/uuid"
@@ -28,5 +30,5 @@ func (p *Broker) Update(msg tea.Msg) tea.Cmd {
 
 func (p *Broker) View() string {
 	mainStyle := lipgloss.NewStyle().Padding(2)
-	return mainStyle.Render(p.Name)
+	return mainStyle.Render(fmt.Sprintf("%s (%s)", p.Name, p.URL))
 }

@@ -36,7 +36,8 @@ func NewMenu() *Menu {
 
 	return &Menu{
 		items:             []*MenuItem{},
-		selectedItemIndex: 0,
+		selectedItemIndex: -1,
+		selectedItem:      nil,
 		focused:           true,
 		searchFocused:     false,
 		search:            ti,
@@ -79,19 +80,21 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 			}
 		case "j", "down":
 			if m.focused && m.selectedItemIndex < len(m.items)-1 {
-				m.selectedItemIndex++
+				m.selectedItemIndex = max(len(m.items)-1, m.selectedItemIndex+1)
+				m.selectedItem = m.items[m.selectedItemIndex]
 			}
 		case "k", "up":
 			if m.focused && m.selectedItemIndex > 0 {
-				m.selectedItemIndex--
+				m.selectedItemIndex = max(0, m.selectedItemIndex-1)
+				m.selectedItem = m.items[m.selectedItemIndex]
 			}
 		case "enter", "tab":
 			// unfocus sidebar
 			if m.focused && m.search.Focused() {
 				m.search.Blur()
+			} else if m.focused && !m.search.Focused() {
+				m.focused = false
 			}
-			m.focused = false
-			m.selectedItem = m.items[m.selectedItemIndex]
 		case "ctrl+k":
 			// Return to sidebar
 			if !m.focused && !m.search.Focused() {
@@ -111,18 +114,20 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 	m.search = tiM
 
 	if m.selectedItem != nil {
-		m.selectedItem.screen.SetConstrains(m.width, m.height)
-		cmds = append(cmds, m.selectedItem.screen.Update(parentMsg))
+		cmds = append(cmds, m.selectedItem.Update(parentMsg))
 	}
 
 	return tea.Batch(cmds...)
 }
 
 func (m *Menu) View() string {
+	bgColor := lipgloss.Color("#222222")
+
 	menuItemStyle := lipgloss.NewStyle().
-		Background(lipgloss.Color("#222222")).Width(m.width)
+		Background(bgColor).Width(m.width)
+
 	menuStyle := lipgloss.NewStyle().
-		Background(lipgloss.Color("#222222")).Padding(1).Width(m.width - 2)
+		Background(bgColor).Padding(1).Width(m.width)
 
 	var content string
 
@@ -137,7 +142,7 @@ func (m *Menu) View() string {
 		} else {
 			newLine = ""
 		}
-		content += menuItemStyle.Render(m.formatItem(item.title, itemIndex == m.selectedItemIndex)) + newLine
+		content += menuItemStyle.Render(m.formatItem(item.View(), itemIndex == m.selectedItemIndex)) + newLine
 	}
 
 	var fillercontent string
@@ -154,7 +159,7 @@ func (m *Menu) View() string {
 
 func (m *Menu) Screen() string {
 	if m.selectedItem == nil {
-		return ""
+		return "Please select a menu item"
 	}
 
 	return m.selectedItem.screen.View()
@@ -169,7 +174,7 @@ func NewMenuItem(id string, title string, screen *screens.Screen) *MenuItem {
 }
 
 func (m *Menu) GetWidth() int {
-	return m.width
+	return lipgloss.Width(m.View())
 }
 
 func (m *Menu) IsFocused() bool {
@@ -202,4 +207,17 @@ func (m *Menu) formatItem(display string, active bool) string {
 		PaddingLeft(2).
 		PaddingRight(2).
 		Render(content)
+}
+
+func (mi *MenuItem) Update(msg tea.Msg) tea.Cmd {
+	if mi.screen == nil {
+		cmd := mi.screen.Update(msg)
+		return cmd
+	}
+	return nil
+}
+
+func (mi *MenuItem) View() string {
+	content := mi.title
+	return content
 }

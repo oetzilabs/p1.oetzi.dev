@@ -1,60 +1,30 @@
 package screens
 
 import (
+	"fmt"
 	"p1/pkg/models"
 	"slices"
-	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 type BrokersScreen struct {
-	collection    []*models.Broker
-	selected      int
-	focused       bool
-	search        string
-	searchFocused bool
-	viewport      viewport.Model
-	width         int
-	height        int
-	ready         bool
+	collection []*models.Broker
+	selected   int
 }
 
 func NewBrokersScreen(renderer *lipgloss.Renderer) *Screen {
 	screen := &BrokersScreen{
-		collection:    []*models.Broker{},
-		selected:      0,
-		focused:       false,
-		search:        "",
-		searchFocused: false,
-		ready:         false,
-		width:         30,
-		height:        0,
+		collection: []*models.Broker{},
+		selected:   0,
 	}
 	return NewScreen(renderer, screen)
 }
 
 func (bs *BrokersScreen) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
-	switch msg := msg.(type) {
-	case models.InternalWindowSizeMsg:
-		bs.height = msg.Height
-		if !bs.ready {
-			bs.viewport = viewport.New(bs.width, msg.Height)
-			bs.viewport.Style = bs.viewport.Style.
-				PaddingLeft(2).
-				PaddingRight(2).
-				PaddingTop(1).
-				MaxHeight(bs.height - lipgloss.Height(bs.View()))
-			bs.ready = true
-		} else {
-			bs.viewport.Width = bs.width
-			bs.viewport.Height = bs.height
-		}
 
-	}
 	for _, broker := range bs.collection {
 		cmds = append(cmds, broker.Update(msg))
 	}
@@ -62,17 +32,10 @@ func (bs *BrokersScreen) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (bs *BrokersScreen) View() string {
-	content := ""
+	content := fmt.Sprintf("Brokers (%d))\n", len(bs.collection))
 	for _, broker := range bs.collection {
 		content += broker.View() + "\n"
 	}
-	contentHeight := lipgloss.Height(content)
-	if contentHeight < bs.height {
-		fillerHeight := bs.height - contentHeight
-		filler := strings.Repeat(" \n", fillerHeight)
-		content += filler
-	}
-
 	return lipgloss.JoinHorizontal(lipgloss.Top, content)
 }
 

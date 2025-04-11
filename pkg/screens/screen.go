@@ -12,13 +12,12 @@ import (
 )
 
 type Screen struct {
-	ready        bool
-	Content      interfaces.ScreenContent
-	viewport     viewport.Model
-	menuWidth    int
-	height       int
-	footerHeight int
-	theme        theme.Theme
+	ready     bool
+	Content   interfaces.ScreenContent
+	viewport  viewport.Model
+	menuWidth int
+	height    int
+	theme     theme.Theme
 }
 
 func NewScreen(renderer *lipgloss.Renderer, content interfaces.ScreenContent) *Screen {
@@ -27,12 +26,6 @@ func NewScreen(renderer *lipgloss.Renderer, content interfaces.ScreenContent) *S
 		ready:   false,
 		theme:   theme.BasicTheme(renderer, nil),
 	}
-}
-
-func (s *Screen) SetConstrains(mw int, fh int) *Screen {
-	s.footerHeight = fh
-	s.menuWidth = mw
-	return s
 }
 
 var modifiedKeyMap = viewport.KeyMap{
@@ -68,19 +61,21 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case models.InternalWindowSizeMsg:
 		s.height = msg.Height
-	case tea.WindowSizeMsg:
 		if !s.ready {
-			s.viewport = viewport.New(msg.Width-s.menuWidth, msg.Height-s.footerHeight)
+			s.viewport = viewport.New(msg.Width-msg.MenuWidth, msg.Height-msg.FooterHeight)
+			s.viewport.HighPerformanceRendering = false
+			s.viewport.KeyMap = modifiedKeyMap
 			s.viewport.Style = s.viewport.Style.
 				PaddingLeft(2).
 				PaddingRight(2).
 				PaddingTop(1).
-				MaxHeight(msg.Height - s.footerHeight)
+				Height(msg.Height - msg.FooterHeight).
+				Width(msg.Width - msg.MenuWidth).
+				MaxHeight(msg.Height - msg.FooterHeight)
 			s.ready = true
-			s.viewport.KeyMap = modifiedKeyMap
 		} else {
-			s.viewport.Width = msg.Width - s.menuWidth
-			s.viewport.Height = msg.Height - s.footerHeight
+			s.viewport.Width = max(0, msg.Width - msg.MenuWidth)
+			s.viewport.Height = max(0, msg.Height - msg.FooterHeight)
 		}
 	}
 	cmds = append(cmds, s.Content.Update(parentMsg))

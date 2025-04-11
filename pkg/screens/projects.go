@@ -1,60 +1,29 @@
 package screens
 
 import (
+	"fmt"
 	"p1/pkg/models"
 	"slices"
-	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 type ProjectsScreen struct {
-	collection    []*models.Project
-	selected      int
-	focused       bool
-	search        string
-	searchFocused bool
-	viewport      viewport.Model
-	width         int
-	height        int
-	ready         bool
+	collection []*models.Project
+	selected   int
 }
 
 func NewProjectsScreen(renderer *lipgloss.Renderer) *Screen {
 	screen := &ProjectsScreen{
-		collection:    []*models.Project{},
-		selected:      0,
-		focused:       false,
-		search:        "",
-		searchFocused: false,
-		ready:         false,
-		width:         30,
-		height:        0,
+		collection: []*models.Project{},
+		selected:   0,
 	}
 	return NewScreen(renderer, screen)
 }
 
 func (ps *ProjectsScreen) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
-	switch msg := msg.(type) {
-	case models.InternalWindowSizeMsg:
-		ps.height = msg.Height
-		if !ps.ready {
-			ps.viewport = viewport.New(ps.width, msg.Height)
-			ps.viewport.Style = ps.viewport.Style.
-				PaddingLeft(2).
-				PaddingRight(2).
-				PaddingTop(1).
-				MaxHeight(ps.height - lipgloss.Height(ps.View()))
-			ps.ready = true
-		} else {
-			ps.viewport.Width = ps.width
-			ps.viewport.Height = ps.height
-		}
-
-	}
 	for _, project := range ps.collection {
 		cmds = append(cmds, project.Update(msg))
 	}
@@ -62,16 +31,12 @@ func (ps *ProjectsScreen) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (ps *ProjectsScreen) View() string {
-	content := ""
+	content := fmt.Sprintf("Projects (%d))\n", len(ps.collection))
+
 	for _, project := range ps.collection {
 		content += project.View() + "\n"
 	}
-	contentHeight := lipgloss.Height(content)
-	if contentHeight < ps.height {
-		fillerHeight := ps.height - contentHeight
-		filler := strings.Repeat(" \n", fillerHeight)
-		content += filler
-	}
+
 	return lipgloss.JoinHorizontal(lipgloss.Top, content)
 }
 
