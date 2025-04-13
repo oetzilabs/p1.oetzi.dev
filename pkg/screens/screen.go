@@ -12,12 +12,14 @@ import (
 )
 
 type Screen struct {
-	ready     bool
-	Content   interfaces.ScreenContent
-	viewport  viewport.Model
-	menuWidth int
-	height    int
-	theme     theme.Theme
+	ready        bool
+	Content      interfaces.ScreenContent
+	viewport     viewport.Model
+	menuWidth    int
+	footerHeight int
+	width        int
+	height       int
+	theme        theme.Theme
 }
 
 func NewScreen(renderer *lipgloss.Renderer, content interfaces.ScreenContent) *Screen {
@@ -61,6 +63,9 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case models.InternalWindowSizeMsg:
 		s.height = msg.Height
+		s.menuWidth = msg.MenuWidth
+		s.width = msg.Width
+		s.footerHeight = msg.FooterHeight
 		if !s.ready {
 			s.viewport = viewport.New(msg.Width-msg.MenuWidth, msg.Height-msg.FooterHeight)
 			s.viewport.HighPerformanceRendering = false
@@ -68,16 +73,16 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 			s.viewport.Style = s.viewport.Style.
 				PaddingLeft(2).
 				PaddingRight(2).
-				PaddingTop(1).
-				Height(msg.Height - msg.FooterHeight).
-				Width(msg.Width - msg.MenuWidth).
-				MaxHeight(msg.Height - msg.FooterHeight)
+				PaddingTop(1)
 			s.ready = true
 		} else {
-			s.viewport.Width = max(0, msg.Width - msg.MenuWidth)
-			s.viewport.Height = max(0, msg.Height - msg.FooterHeight)
+			s.viewport.Width = max(0, msg.Width-msg.MenuWidth)
+			s.viewport.Height = max(0, msg.Height-msg.FooterHeight)
+			s.viewport.Style = s.viewport.Style.MaxHeight(msg.Height - msg.FooterHeight)
 		}
 	}
+	s.viewport.Width = max(0, s.width-s.menuWidth)
+	s.viewport.Height = max(0, s.height-s.footerHeight)
 	cmds = append(cmds, s.Content.Update(parentMsg))
 	s.viewport.SetContent(s.Content.View())
 	return tea.Batch(cmds...)

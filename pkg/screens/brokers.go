@@ -32,7 +32,7 @@ func (bs *BrokersScreen) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (bs *BrokersScreen) View() string {
-	content := fmt.Sprintf("Brokers (%d))\n", len(bs.collection))
+	content := fmt.Sprintf("Brokers (%d)\n", len(bs.collection))
 	for _, broker := range bs.collection {
 		content += broker.View() + "\n"
 	}
