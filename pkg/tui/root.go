@@ -60,14 +60,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		cmds = append(cmds, func() tea.Msg {
-			return models.InternalWindowSizeMsg{
+		cmds = append(cmds, tea.Cmd(func() tea.Msg {
+			return tea.Msg(models.InternalWindowSizeMsg{
 				Width:        msg.Width,
 				Height:       msg.Height,
 				MenuWidth:    m.menu.GetWidth(),
 				FooterHeight: lipgloss.Height(m.footer.View()),
-			}
-		})
+			})
+		}))
 	}
 
 	cmds = append(cmds, m.footer.Update(parentMsg))

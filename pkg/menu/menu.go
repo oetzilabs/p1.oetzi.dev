@@ -3,6 +3,7 @@ package menu
 import (
 	"p1/pkg/models"
 	"p1/pkg/screens"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -48,11 +49,20 @@ func NewMenu() *Menu {
 
 func (m *Menu) AddItem(item *MenuItem) *Menu {
 	m.items = append(m.items, item)
+	m.selectedItemIndex = len(m.items) - 1
+	m.selectedItem = item
 	return m
 }
 
 func (m *Menu) RemoveItem(item *MenuItem) *Menu {
-	m.items = append(m.items, item)
+	for i, v := range m.items {
+		if v.id == item.id {
+			m.items = slices.Delete(m.items, i, i+1)
+			m.selectedItemIndex = i - 1
+			m.selectedItem = m.items[m.selectedItemIndex]
+			break
+		}
+	}
 	return m
 }
 
@@ -79,12 +89,12 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 				m.search.Blur()
 			}
 		case "j", "down":
-			if m.focused && m.selectedItemIndex < len(m.items)-1 {
+			if m.focused && !m.search.Focused() && m.selectedItemIndex < len(m.items)-1 {
 				m.selectedItemIndex = max(len(m.items)-1, m.selectedItemIndex+1)
 				m.selectedItem = m.items[m.selectedItemIndex]
 			}
 		case "k", "up":
-			if m.focused && m.selectedItemIndex > 0 {
+			if m.focused && !m.search.Focused() && m.selectedItemIndex > 0 {
 				m.selectedItemIndex = max(0, m.selectedItemIndex-1)
 				m.selectedItem = m.items[m.selectedItemIndex]
 			}
@@ -113,8 +123,8 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 	}
 	m.search = tiM
 
-	if m.selectedItem != nil {
-		cmds = append(cmds, m.selectedItem.Update(parentMsg))
+	for _, item := range m.items {
+		cmds = append(cmds, item.Update(parentMsg))
 	}
 
 	return tea.Batch(cmds...)
@@ -159,7 +169,7 @@ func (m *Menu) View() string {
 
 func (m *Menu) Screen() string {
 	if m.selectedItem == nil {
-		return "Please select a menu item"
+		return "Please select a menu item\n" + strings.Repeat("\n", max(0, m.height-1))
 	}
 
 	return m.selectedItem.screen.View()
@@ -210,7 +220,7 @@ func (m *Menu) formatItem(display string, active bool) string {
 }
 
 func (mi *MenuItem) Update(msg tea.Msg) tea.Cmd {
-	if mi.screen == nil {
+	if mi.screen != nil {
 		cmd := mi.screen.Update(msg)
 		return cmd
 	}

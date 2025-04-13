@@ -31,7 +31,7 @@ func (ps *ProjectsScreen) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (ps *ProjectsScreen) View() string {
-	content := fmt.Sprintf("Projects (%d))\n", len(ps.collection))
+	content := fmt.Sprintf("Projects (%d)\n", len(ps.collection))
 
 	for _, project := range ps.collection {
 		content += project.View() + "\n"
