@@ -14,9 +14,9 @@ type Broker struct {
 	URL  string `json:"url"`
 }
 
-func NewBroker(name string, url string) Broker {
+func NewBroker(name string, url string) *Broker {
 	id := uuid.New().String()
-	return Broker{
+	return &Broker{
 		ID:   id,
 		Name: name,
 		URL:  url,
@@ -29,6 +29,6 @@ func (p *Broker) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (p *Broker) View() string {
-	mainStyle := lipgloss.NewStyle().Padding(2)
+	mainStyle := lipgloss.NewStyle().Padding(2).Border(lipgloss.NormalBorder())
 	return mainStyle.Render(fmt.Sprintf("%s (%s)", p.Name, p.URL))
 }

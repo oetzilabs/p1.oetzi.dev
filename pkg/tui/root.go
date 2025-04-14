@@ -76,7 +76,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	sidebar := m.menu.View()
+	menu := m.menu.View()
 	screen := m.menu.Screen()
 	footerContent := m.footer.View()
 
@@ -94,6 +94,6 @@ func (m model) View() string {
 		m.theme.Base().
 			MaxWidth(m.width).
 			MaxHeight(m.height).
-			Render(lipgloss.JoinHorizontal(lipgloss.Left, sidebar, mainContent)),
+			Render(lipgloss.JoinHorizontal(lipgloss.Left, menu, mainContent)),
 	)
 }

@@ -20,6 +20,16 @@ type Screen struct {
 	width        int
 	height       int
 	theme        theme.Theme
+	focused      bool
+}
+
+func (s *Screen) IsFocused() bool {
+	return s.focused
+}
+
+func (s *Screen) SetFocused(focused bool) *Screen {
+	s.focused = focused
+	return s
 }
 
 func NewScreen(renderer *lipgloss.Renderer, content interfaces.ScreenContent) *Screen {
@@ -27,6 +37,7 @@ func NewScreen(renderer *lipgloss.Renderer, content interfaces.ScreenContent) *S
 		Content: content,
 		ready:   false,
 		theme:   theme.BasicTheme(renderer, nil),
+		focused: false,
 	}
 }
 
@@ -67,7 +78,7 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 		s.width = msg.Width
 		s.footerHeight = msg.FooterHeight
 		if !s.ready {
-			s.viewport = viewport.New(msg.Width-msg.MenuWidth, msg.Height-msg.FooterHeight)
+			s.viewport = viewport.New(msg.Width-msg.MenuWidth-4, msg.Height-msg.FooterHeight-1)
 			s.viewport.HighPerformanceRendering = false
 			s.viewport.KeyMap = modifiedKeyMap
 			s.viewport.Style = s.viewport.Style.
@@ -76,15 +87,27 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 				PaddingTop(1)
 			s.ready = true
 		} else {
-			s.viewport.Width = max(0, msg.Width-msg.MenuWidth)
-			s.viewport.Height = max(0, msg.Height-msg.FooterHeight)
-			s.viewport.Style = s.viewport.Style.MaxHeight(msg.Height - msg.FooterHeight)
+			s.viewport.Width = max(0, msg.Width-msg.MenuWidth-4)
+			s.viewport.Height = max(0, msg.Height-msg.FooterHeight-1)
+			s.viewport.Style = s.viewport.Style.MaxHeight(msg.Height - msg.FooterHeight - 1)
 		}
 	}
-	s.viewport.Width = max(0, s.width-s.menuWidth)
-	s.viewport.Height = max(0, s.height-s.footerHeight)
+
+	s.viewport.KeyMap = modifiedKeyMap
+	s.viewport.Width = max(0, s.width-s.menuWidth-4)
+	s.viewport.Height = max(0, s.height-s.footerHeight-1)
 	cmds = append(cmds, s.Content.Update(parentMsg))
 	s.viewport.SetContent(s.Content.View())
+
+	if s.focused {
+		vpm, cmd := s.viewport.Update(parentMsg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		s.viewport = vpm
+	}
+
 	return tea.Batch(cmds...)
 }
 
