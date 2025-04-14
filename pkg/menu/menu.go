@@ -92,11 +92,13 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 			if m.focused && !m.search.Focused() && m.selectedItemIndex < len(m.items)-1 {
 				m.selectedItemIndex = max(len(m.items)-1, m.selectedItemIndex+1)
 				m.selectedItem = m.items[m.selectedItemIndex]
+				m.selectedItem.screen.SetFocused(false)
 			}
 		case "k", "up":
 			if m.focused && !m.search.Focused() && m.selectedItemIndex > 0 {
 				m.selectedItemIndex = max(0, m.selectedItemIndex-1)
 				m.selectedItem = m.items[m.selectedItemIndex]
+				m.selectedItem.screen.SetFocused(false)
 			}
 		case "enter", "tab":
 			// unfocus sidebar
@@ -104,11 +106,13 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 				m.search.Blur()
 			} else if m.focused && !m.search.Focused() {
 				m.focused = false
+				m.selectedItem.screen.SetFocused(true)
 			}
 		case "ctrl+k":
 			// Return to sidebar
 			if !m.focused && !m.search.Focused() {
 				m.focused = true
+				m.selectedItem.screen.SetFocused(false)
 			}
 		case "q":
 			if m.focused && !m.search.Focused() {
@@ -159,7 +163,7 @@ func (m *Menu) View() string {
 	// Calculate remaining height and add filler
 	currentHeight := lipgloss.Height(content)
 	if currentHeight < m.height {
-		fillerHeight := m.height - currentHeight
+		fillerHeight := m.height - currentHeight - 4
 		filler := strings.Repeat(strings.Repeat(" ", m.width)+"\n", fillerHeight)
 		fillercontent += menuItemStyle.Render(filler) + "\n"
 	}
@@ -169,7 +173,7 @@ func (m *Menu) View() string {
 
 func (m *Menu) Screen() string {
 	if m.selectedItem == nil {
-		return "Please select a menu item\n" + strings.Repeat("\n", max(0, m.height-1))
+		return "Please select a menu item\n" + strings.Repeat("\n", max(0, m.height-2))
 	}
 
 	return m.selectedItem.screen.View()
