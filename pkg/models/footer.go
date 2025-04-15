@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log/slog"
 	"p1/pkg/interfaces"
 	"p1/pkg/tui/theme"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type Footer struct {
-	Commands []interfaces.FooterCommand
+	Commands []*interfaces.FooterCommand
 	theme    *theme.Theme
 	error    *VisibleError
 	width    int
@@ -19,23 +20,28 @@ type Footer struct {
 
 type FooterUpdate struct {
 	Content  string
-	Commands []interfaces.FooterCommand
+	Commands []*interfaces.FooterCommand
 }
 
 var (
-	BaseCommands = []interfaces.FooterCommand{
-		{Key: "q", Value: "quit"},
+	BaseCommands = []*interfaces.FooterCommand{
+		{Key: "q", Value: "Quit"},
 		{Key: "ctrl+k", Value: "Focus Sidebar"},
 	}
 )
 
-func NewFooter(theme *theme.Theme, commands []interfaces.FooterCommand) *Footer {
+func NewFooter(theme *theme.Theme, commands []*interfaces.FooterCommand) *Footer {
 	return &Footer{
 		theme:    theme,
 		Commands: commands,
 		width:    0,
 		helper:   "",
 	}
+}
+
+func (f *Footer) SetCommands(cmds []*interfaces.FooterCommand) {
+	f.ResetCommands()
+	f.Commands = append(f.Commands, cmds...)
 }
 
 func (f *Footer) Update(msg tea.Msg) tea.Cmd {
@@ -60,7 +66,7 @@ func (f *Footer) View() string {
 	base := f.theme.TextAccent().Background(lipgloss.AdaptiveColor{Dark: "#000000", Light: "#FFFFFF"}).Render
 
 	table := f.theme.Base().
-		Width(f.width - 2).
+		Width(f.width - 1).
 		Background(lipgloss.AdaptiveColor{Dark: "#000000", Light: "#FFFFFF"}).
 		Padding(1).
 		PaddingLeft(2).
@@ -85,7 +91,20 @@ func (f *Footer) View() string {
 	lines = append(lines, content)
 
 	mergedCommands := BaseCommands
-	mergedCommands = append(mergedCommands, f.Commands...)
+	for _, cmd := range f.Commands {
+		// only add non existing keys
+		found := false
+		for _, cmd2 := range BaseCommands {
+			if cmd.Key == cmd2.Key {
+				slog.Info("Found command", "key", cmd.Key)
+				found = true
+				break
+			}
+		}
+		if !found {
+			mergedCommands = append(mergedCommands, cmd)
+		}
+	}
 
 	// Add other commands
 	commands := []string{}

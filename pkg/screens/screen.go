@@ -21,6 +21,7 @@ type Screen struct {
 	height       int
 	theme        theme.Theme
 	focused      bool
+	Commands     []*interfaces.FooterCommand
 }
 
 func (s *Screen) IsFocused() bool {
@@ -32,12 +33,15 @@ func (s *Screen) SetFocused(focused bool) *Screen {
 	return s
 }
 
-func NewScreen(renderer *lipgloss.Renderer, content interfaces.ScreenContent) *Screen {
+func NewScreen(renderer *lipgloss.Renderer, content interfaces.ScreenContent, commands ...*interfaces.FooterCommand) *Screen {
+	cmds := []*interfaces.FooterCommand{}
+	cmds = append(cmds, commands...)
 	return &Screen{
-		Content: content,
-		ready:   false,
-		theme:   theme.BasicTheme(renderer, nil),
-		focused: false,
+		Content:  content,
+		ready:    false,
+		theme:    theme.BasicTheme(renderer, nil),
+		focused:  false,
+		Commands: cmds,
 	}
 }
 
@@ -97,6 +101,7 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 	s.viewport.KeyMap = modifiedKeyMap
 	s.viewport.Width = max(0, s.width-s.menuWidth-2)
 	s.viewport.Height = max(0, s.height-s.footerHeight)
+	s.viewport.Style = s.viewport.Style.MaxHeight(max(0, s.height-s.footerHeight))
 	cmds = append(cmds, s.Content.Update(parentMsg))
 	s.viewport.SetContent(s.Content.View())
 
@@ -126,9 +131,9 @@ func (s *Screen) getScrollbar(content string) string {
 	y := s.viewport.YOffset
 	vh := s.viewport.Height
 	ch := lipgloss.Height(content)
-	// if vh >= ch {
-	// 	return ""
-	// }
+	if vh >= ch {
+		return ""
+	}
 
 	height := (vh * vh) / ch
 	maxScroll := ch - vh

@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"p1/pkg/interfaces"
 	"p1/pkg/models"
 	"p1/pkg/screens"
 	"slices"
@@ -64,6 +65,14 @@ func (m *Menu) RemoveItem(item *MenuItem) *Menu {
 		}
 	}
 	return m
+}
+
+func (m *Menu) GetCommands() []*interfaces.FooterCommand {
+	cmds := []*interfaces.FooterCommand{}
+
+	cmds = append(cmds, m.selectedItem.screen.Commands...)
+
+	return cmds
 }
 
 func (m *Menu) Update(msg tea.Msg) tea.Cmd {

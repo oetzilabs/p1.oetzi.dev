@@ -26,7 +26,7 @@ type model struct {
 func NewModel(renderer *lipgloss.Renderer) tea.Model {
 	basicTheme := theme.BasicTheme(renderer, nil)
 
-	footerCommands := []interfaces.FooterCommand{}
+	footerCommands := []*interfaces.FooterCommand{}
 
 	footer := models.NewFooter(&basicTheme, footerCommands)
 	footer.ResetCommands()
@@ -69,6 +69,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			})
 		}))
 	}
+
+	m.footer.SetCommands(m.menu.GetCommands())
 
 	cmds = append(cmds, m.footer.Update(parentMsg))
 
