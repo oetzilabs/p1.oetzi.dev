@@ -78,24 +78,25 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 		s.width = msg.Width
 		s.footerHeight = msg.FooterHeight
 		if !s.ready {
-			s.viewport = viewport.New(msg.Width-msg.MenuWidth-4, msg.Height-msg.FooterHeight-1)
+			s.viewport = viewport.New(msg.Width-msg.MenuWidth-2, msg.Height-msg.FooterHeight)
 			s.viewport.HighPerformanceRendering = false
 			s.viewport.KeyMap = modifiedKeyMap
 			s.viewport.Style = s.viewport.Style.
 				PaddingLeft(2).
 				PaddingRight(2).
-				PaddingTop(1)
+				PaddingTop(1).
+				PaddingBottom(1)
 			s.ready = true
 		} else {
-			s.viewport.Width = max(0, msg.Width-msg.MenuWidth-4)
-			s.viewport.Height = max(0, msg.Height-msg.FooterHeight-1)
-			s.viewport.Style = s.viewport.Style.MaxHeight(msg.Height - msg.FooterHeight - 1)
+			s.viewport.Width = max(0, msg.Width-msg.MenuWidth-2)
+			s.viewport.Height = max(0, msg.Height-msg.FooterHeight)
+			s.viewport.Style = s.viewport.Style.MaxHeight(msg.Height - msg.FooterHeight)
 		}
 	}
 
 	s.viewport.KeyMap = modifiedKeyMap
-	s.viewport.Width = max(0, s.width-s.menuWidth-4)
-	s.viewport.Height = max(0, s.height-s.footerHeight-1)
+	s.viewport.Width = max(0, s.width-s.menuWidth-2)
+	s.viewport.Height = max(0, s.height-s.footerHeight)
 	cmds = append(cmds, s.Content.Update(parentMsg))
 	s.viewport.SetContent(s.Content.View())
 
@@ -112,10 +113,11 @@ func (s *Screen) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (s *Screen) View() string {
-	content := s.viewport.View()
-	return lipgloss.JoinVertical(
+	viewportView := s.viewport.View()
+	content := s.Content.View()
+	return lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		content,
+		viewportView,
 		s.getScrollbar(content),
 	)
 }
@@ -124,9 +126,9 @@ func (s *Screen) getScrollbar(content string) string {
 	y := s.viewport.YOffset
 	vh := s.viewport.Height
 	ch := lipgloss.Height(content)
-	if vh >= ch {
-		return ""
-	}
+	// if vh >= ch {
+	// 	return ""
+	// }
 
 	height := (vh * vh) / ch
 	maxScroll := ch - vh
