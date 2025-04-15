@@ -56,9 +56,9 @@ func (t *Tab) Display() string {
 }
 
 // Commands returns the tab's commands
-func (t *Tab) Commands() []interfaces.FooterCommand {
+func (t *Tab) Commands() []*interfaces.FooterCommand {
 	if t.Content == nil {
-		return []interfaces.FooterCommand{}
+		return []*interfaces.FooterCommand{}
 	}
 
 	return t.Content.Commands()

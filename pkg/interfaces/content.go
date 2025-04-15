@@ -11,7 +11,7 @@ type Content interface {
 	Update(msg tea.Msg) tea.Cmd
 	View() string
 	Display() string
-	Commands() []FooterCommand
+	Commands() []*FooterCommand
 }
 
 type ScreenContent interface {
