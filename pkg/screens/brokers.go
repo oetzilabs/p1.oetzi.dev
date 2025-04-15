@@ -16,32 +16,8 @@ type BrokersScreen struct {
 
 func NewBrokersScreen(renderer *lipgloss.Renderer) *Screen {
 	screen := &BrokersScreen{
-		collection: []*models.Broker{
-			models.NewBroker("Broker 1", "http://localhost:8080"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-			models.NewBroker("Broker 2", "http://localhost:8081"),
-		},
-		selected: 0,
+		collection: []*models.Broker{},
+		selected:   0,
 	}
 	return NewScreen(renderer, screen)
 }
