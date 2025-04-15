@@ -2,6 +2,7 @@ package screens
 
 import (
 	"fmt"
+	"p1/pkg/interfaces"
 	"p1/pkg/models"
 	"slices"
 
@@ -19,7 +20,7 @@ func NewProjectsScreen(renderer *lipgloss.Renderer) *Screen {
 		collection: []*models.Project{},
 		selected:   0,
 	}
-	return NewScreen(renderer, screen)
+	return NewScreen(renderer, screen, &interfaces.FooterCommand{Key: "n", Value: "New Project"})
 }
 
 func (ps *ProjectsScreen) Update(msg tea.Msg) tea.Cmd {
