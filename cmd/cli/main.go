@@ -63,19 +63,17 @@ func main() {
 		case <-tuiDone:
 			slog.Info("TUI closed")
 		}
-		if srv != nil {
-			srv.Shutdown()
-		}
+
 		if cl != nil {
 			err := cl.Stop()
 			if err != nil {
 				slog.Error("Error stopping client", "error", err.Error())
 			}
 		}
-		// Ensure clean exit
-		if config.WithTui {
-			os.Exit(0)
+		if srv != nil {
+			srv.Shutdown()
 		}
+		os.Exit(0)
 	}()
 
 	if config.WithTui {
