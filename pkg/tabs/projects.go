@@ -37,6 +37,6 @@ func (pt *ProjectsTab) Display() string {
 	return "Projects " + count
 }
 
-func (pt *ProjectsTab) Commands() []interfaces.FooterCommand {
+func (pt *ProjectsTab) Commands() []*interfaces.FooterCommand {
 	return pt.collection.Commands()
 }

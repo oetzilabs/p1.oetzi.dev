@@ -81,8 +81,8 @@ func (bc *BrokerCollection) Count() string {
 	return fmt.Sprintf("(%d)", len(bc.brokers))
 }
 
-func (bc *BrokerCollection) Commands() []interfaces.FooterCommand {
-	return []interfaces.FooterCommand{
+func (bc *BrokerCollection) Commands() []*interfaces.FooterCommand {
+	return []*interfaces.FooterCommand{
 		{Key: "ctrl+n", Value: "New Broker"},
 	}
 }

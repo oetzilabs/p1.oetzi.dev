@@ -89,8 +89,8 @@ func (pc *Projects) Count() string {
 	return fmt.Sprintf("(%d)", len(pc.projects))
 }
 
-func (pc *Projects) Commands() []interfaces.FooterCommand {
-	return []interfaces.FooterCommand{
+func (pc *Projects) Commands() []*interfaces.FooterCommand {
+	return []*interfaces.FooterCommand{
 		{Key: "ctrl+n", Value: "New Project"},
 	}
 }

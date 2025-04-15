@@ -39,6 +39,6 @@ func (et *ExitTab) Display() string {
 	return "Exit (q)"
 }
 
-func (et *ExitTab) Commands() []interfaces.FooterCommand {
-	return []interfaces.FooterCommand{}
+func (et *ExitTab) Commands() []*interfaces.FooterCommand {
+	return []*interfaces.FooterCommand{}
 }
