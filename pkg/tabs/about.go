@@ -32,6 +32,6 @@ func (at *AboutTab) Display() string {
 	return "About"
 }
 
-func (at *AboutTab) Commands() []interfaces.FooterCommand {
-	return []interfaces.FooterCommand{}
+func (at *AboutTab) Commands() []*interfaces.FooterCommand {
+	return []*interfaces.FooterCommand{}
 }

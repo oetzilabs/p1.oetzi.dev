@@ -36,6 +36,6 @@ func (st *ServersTab) Display() string {
 	return "Servers " + count
 }
 
-func (st *ServersTab) Commands() []interfaces.FooterCommand {
+func (st *ServersTab) Commands() []*interfaces.FooterCommand {
 	return st.collection.Commands()
 }

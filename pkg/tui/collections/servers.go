@@ -83,8 +83,8 @@ func (sc *ServerCollection) Count() string {
 	return fmt.Sprintf("(%d)", len(sc.servers))
 }
 
-func (sc *ServerCollection) Commands() []interfaces.FooterCommand {
-	return []interfaces.FooterCommand{
+func (sc *ServerCollection) Commands() []*interfaces.FooterCommand {
+	return []*interfaces.FooterCommand{
 		{Key: "ctrl+n", Value: "New Server"},
 	}
 }

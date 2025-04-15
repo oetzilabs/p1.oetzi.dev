@@ -24,19 +24,19 @@ func NewBrokersTab() Tab {
 	}
 }
 
-func (pt *BrokersTab) Update(msg tea.Msg) tea.Cmd {
-	return pt.collection.Update(msg)
+func (bt *BrokersTab) Update(msg tea.Msg) tea.Cmd {
+	return bt.collection.Update(msg)
 }
 
-func (pt *BrokersTab) View() string {
-	return pt.collection.View()
+func (bt *BrokersTab) View() string {
+	return bt.collection.View()
 }
 
-func (pt *BrokersTab) Display() string {
-	count := pt.collection.Count()
+func (bt *BrokersTab) Display() string {
+	count := bt.collection.Count()
 	return "Brokers " + count
 }
 
-func (pt *BrokersTab) Commands() []interfaces.FooterCommand {
-	return pt.collection.Commands()
+func (bt *BrokersTab) Commands() []*interfaces.FooterCommand {
+	return bt.collection.Commands()
 }
