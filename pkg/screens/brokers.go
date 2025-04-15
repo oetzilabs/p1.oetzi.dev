@@ -17,32 +17,8 @@ type BrokersScreen struct {
 
 func NewBrokersScreen(renderer *lipgloss.Renderer) *Screen {
 	screen := &BrokersScreen{
-		collection: []*models.Broker{
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-			models.NewBroker("asdf", "asdf"),
-		},
-		selected: 0,
+		collection: []*models.Broker{},
+		selected:   0,
 	}
 	return NewScreen(renderer, screen, &interfaces.FooterCommand{Key: "n", Value: "New Broker"})
 }
