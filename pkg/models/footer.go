@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"log/slog"
 	"p1/pkg/interfaces"
 	"p1/pkg/tui/theme"
 
@@ -96,7 +95,6 @@ func (f *Footer) View() string {
 		found := false
 		for _, cmd2 := range BaseCommands {
 			if cmd.Key == cmd2.Key {
-				slog.Info("Found command", "key", cmd.Key)
 				found = true
 				break
 			}
