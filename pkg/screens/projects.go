@@ -55,3 +55,8 @@ func (s *ProjectsScreen) RemoveProject(project *models.Project) *ProjectsScreen 
 	}
 	return s
 }
+
+func (s *ProjectsScreen) Display() string {
+	count := len(s.collection)
+	return fmt.Sprintf("Projects (%d)", count)
+}

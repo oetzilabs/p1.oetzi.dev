@@ -54,3 +54,8 @@ func (s *BrokersScreen) RemoveBroker(broker *models.Broker) *BrokersScreen {
 	}
 	return s
 }
+
+func (s *BrokersScreen) Display() string {
+	count := len(s.collection)
+	return fmt.Sprintf("Brokers (%d)", count)
+}
