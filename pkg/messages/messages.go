@@ -4,6 +4,12 @@ import (
 	"p1/pkg/states"
 )
 
+type RerenderMessage struct {
+	Key      string
+	Value    any
+	OldValue any
+}
+
 type SyncMsg *states.ClientState
 
 type MessageType string

@@ -57,6 +57,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	parentMsg := msg
 	cmds = append(cmds, m.menu.Update(parentMsg))
 	switch msg := msg.(type) {
+	// case messages.RerenderMessage:
+	// 	slog.Info("Rerendering", "key", msg.Key, "value", msg.Value, "oldValue", msg.OldValue)
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height

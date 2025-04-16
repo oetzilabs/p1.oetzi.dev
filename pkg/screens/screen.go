@@ -154,3 +154,10 @@ func (s *Screen) getScrollbar(content string) string {
 
 	return style.Render(lipgloss.PlaceVertical(vh, lipgloss.Position(nYP), bar))
 }
+
+func (s *Screen) Display() string {
+	if s.Content != nil {
+		return s.Content.Display()
+	}
+	return ""
+}

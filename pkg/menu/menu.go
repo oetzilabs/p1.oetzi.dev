@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"log/slog"
 	"p1/pkg/interfaces"
 	"p1/pkg/models"
 	"p1/pkg/screens"
@@ -77,7 +78,24 @@ func (m *Menu) GetCommands() []*interfaces.FooterCommand {
 
 func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 	cmds := []tea.Cmd{}
+	slog.Info("Updating Menu")
 	parentMsg := msg
+	filteredItems := []*MenuItem{}
+	search := m.search.Value()
+	for _, item := range m.items {
+		title := item.View()
+		if strings.Contains(strings.ToLower(title), strings.ToLower(search)) {
+			filteredItems = append(filteredItems, item)
+		}
+	}
+	if len(filteredItems) == 1 && len(search) > 0 {
+		m.selectedItemIndex = 0
+		m.selectedItem = filteredItems[0]
+	}
+	for _, item := range filteredItems {
+		cmds = append(cmds, item.Update(parentMsg))
+	}
+
 	switch msg := msg.(type) {
 	case models.InternalWindowSizeMsg:
 		m.height = msg.Height
@@ -98,15 +116,15 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 				m.search.Blur()
 			}
 		case "j", "down":
-			if m.focused && !m.search.Focused() && m.selectedItemIndex < len(m.items)-1 {
-				m.selectedItemIndex = max(len(m.items)-1, m.selectedItemIndex+1)
-				m.selectedItem = m.items[m.selectedItemIndex]
+			if m.focused && !m.search.Focused() && m.selectedItemIndex < len(filteredItems)-1 {
+				m.selectedItemIndex = max(len(filteredItems)-1, m.selectedItemIndex+1)
+				m.selectedItem = filteredItems[m.selectedItemIndex]
 				m.selectedItem.screen.SetFocused(false)
 			}
 		case "k", "up":
 			if m.focused && !m.search.Focused() && m.selectedItemIndex > 0 {
 				m.selectedItemIndex = max(0, m.selectedItemIndex-1)
-				m.selectedItem = m.items[m.selectedItemIndex]
+				m.selectedItem = filteredItems[m.selectedItemIndex]
 				m.selectedItem.screen.SetFocused(false)
 			}
 		case "enter", "tab":
@@ -136,10 +154,6 @@ func (m *Menu) Update(msg tea.Msg) tea.Cmd {
 	}
 	m.search = tiM
 
-	for _, item := range m.items {
-		cmds = append(cmds, item.Update(parentMsg))
-	}
-
 	return tea.Batch(cmds...)
 }
 
@@ -156,11 +170,18 @@ func (m *Menu) View() string {
 
 	// Add the search bar
 	content += m.search.View() + "\n\n"
-
+	filteredItems := []*MenuItem{}
+	search := m.search.Value()
+	for _, item := range m.items {
+		title := item.View()
+		if strings.Contains(strings.ToLower(title), strings.ToLower(search)) {
+			filteredItems = append(filteredItems, item)
+		}
+	}
 	// Add menu items
-	for itemIndex, item := range m.items {
+	for itemIndex, item := range filteredItems {
 		var newLine string
-		if itemIndex < len(m.items)-1 {
+		if itemIndex < len(filteredItems)-1 {
 			newLine = "\n"
 		} else {
 			newLine = ""
@@ -208,20 +229,28 @@ func (m *Menu) formatItem(display string, active bool) string {
 	parts := strings.SplitN(display, " ", 2)
 	title := parts[0]
 	sidebarWidth := m.width
-	spaceWidth := max(1, sidebarWidth-lipgloss.Width(title))
+	info := ""
+	if len(parts) > 1 {
+		info = parts[1]
+	}
+	spaceWidth := max(1, sidebarWidth-lipgloss.Width(title)-lipgloss.Width(info)-5)
 	spacing := strings.Repeat(" ", spaceWidth)
 
-	content := title + spacing
+	slog.Info("formatItem", "title", title, "info", info)
+
+	content := title + spacing + info
 	if active {
 		if m.focused {
 			return lipgloss.NewStyle().
 				Foreground(lipgloss.Color("205")).
+				Background(lipgloss.Color("#333333")).
 				Bold(true).
 				PaddingRight(2).
 				Render("▶ " + content)
 		}
 		return lipgloss.NewStyle().
 			Foreground(lipgloss.Color("244")).
+			Background(lipgloss.Color("#333333")).
 			Bold(true).
 			PaddingRight(2).
 			Render("▶ " + content)
@@ -233,9 +262,15 @@ func (m *Menu) formatItem(display string, active bool) string {
 }
 
 func (mi *MenuItem) Update(msg tea.Msg) tea.Cmd {
+	cmds := []tea.Cmd{}
 	if mi.screen != nil {
 		cmd := mi.screen.Update(msg)
-		return cmd
+		cmds = append(cmds, cmd)
+		newTitle := mi.screen.Display()
+		if newTitle != "" && newTitle != mi.title {
+			mi.title = newTitle
+		}
+		return tea.Batch(cmds...)
 	}
 	return nil
 }

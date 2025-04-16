@@ -17,4 +17,5 @@ type Content interface {
 type ScreenContent interface {
 	Update(msg tea.Msg) tea.Cmd
 	View() string
+	Display() string
 }
