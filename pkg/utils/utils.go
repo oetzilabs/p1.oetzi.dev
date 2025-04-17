@@ -3,13 +3,10 @@ package utils
 import (
 	"crypto/rand"
 	"math/big"
-	"p1/pkg/tabs"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
-
-type Tabs = []tabs.Tab
 
 func WordWrap(text string, maxWidth int) string {
 	words := strings.Fields(text)
@@ -50,37 +47,4 @@ func GenerateLoremIpsum(length int) string {
 		words = append(words, strings.Repeat(lorem, int(randomnumber.Int64())+1))
 	}
 	return strings.Join(words, "\n")
-}
-
-func FilterTabs(tabs Tabs, search string) Tabs {
-	if search == "" {
-		return tabs
-	}
-	var tabsToRender Tabs
-	for _, tab := range tabs {
-		if tab.IgnoreSearch {
-			tabsToRender = append(tabsToRender, tab)
-			continue
-		}
-		display := strings.ToLower(tab.Display())
-		if len(display) == 0 {
-			continue
-		}
-
-		search := strings.ToLower(search)
-		if strings.Contains(display, search) {
-			tabsToRender = append(tabsToRender, tab)
-		}
-	}
-	return tabsToRender
-}
-
-func FilterTabsGroup(tabs Tabs, group tabs.TabPosition) Tabs {
-	var tabsToRender Tabs
-	for _, tab := range tabs {
-		if tab.Group == group {
-			tabsToRender = append(tabsToRender, tab)
-		}
-	}
-	return tabsToRender
 }
