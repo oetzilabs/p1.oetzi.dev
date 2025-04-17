@@ -38,7 +38,6 @@ var (
 )
 
 func NewDialog(title string, body DialogBody) *Dialog {
-
 	return &Dialog{
 		width:         0,
 		height:        0,
@@ -64,7 +63,7 @@ func (d *Dialog) View() string {
 	}
 
 	question := lipgloss.NewStyle().Align(lipgloss.Left).Render(d.title + "\n")
-	body := lipgloss.NewStyle().Render(d.body.View() + "\n")
+	body := d.body.View() + "\n"
 
 	var okButton string
 	cancelButton := buttonStyle.Render("Cancel")
@@ -75,11 +74,17 @@ func (d *Dialog) View() string {
 		cancelButton = activeButtonStyle.Render("Cancel")
 	}
 
-	buttons := lipgloss.JoinHorizontal(lipgloss.Right, okButton, lipgloss.NewStyle().Render(" "), cancelButton)
-	buttonsLayer := lipgloss.NewStyle().
-		Align(lipgloss.Right).Render(buttons)
+	// Create a filler to push buttons to the right
+	halfWidth := d.width / 2
+	fillerWidth := max(0, halfWidth-lipgloss.Width(cancelButton)-lipgloss.Width(okButton)-4)
 
-	content := lipgloss.JoinVertical(lipgloss.Top, question, body, buttonsLayer)
+	filler := lipgloss.NewStyle().Width(fillerWidth).Render("")
+
+	buttons := lipgloss.JoinHorizontal(lipgloss.Left, filler, cancelButton,
+		lipgloss.NewStyle().Background(dialogBackgroundColor).Render(" "),
+		okButton)
+
+	content := lipgloss.JoinVertical(lipgloss.Top, question, body, buttons)
 
 	box := lipgloss.NewStyle().
 		Background(dialogBackgroundColor).
@@ -120,11 +125,11 @@ func (d *Dialog) Update(msg tea.Msg) tea.Cmd {
 			d.done = true
 		case "left":
 			if !d.body.Focused() {
-				d.confirmStatus = "yes"
+				d.confirmStatus = "cancel"
 			}
 		case "right":
 			if !d.body.Focused() {
-				d.confirmStatus = "cancel"
+				d.confirmStatus = "yes"
 			}
 		}
 	}
@@ -154,4 +159,5 @@ func (d *Dialog) Show() {
 
 func (d *Dialog) Reset() {
 	d.done = false
+	d.confirmStatus = "yes"
 }
