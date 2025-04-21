@@ -3,7 +3,6 @@ package tui
 import (
 	"context"
 
-	"p1/pkg/interfaces"
 	"p1/pkg/menu"
 	"p1/pkg/models"
 	"p1/pkg/screens"
@@ -19,17 +18,11 @@ type model struct {
 	theme    theme.Theme
 	width    int
 	height   int
-	footer   *models.Footer
 	menu     *menu.Menu
 }
 
 func NewModel(renderer *lipgloss.Renderer) tea.Model {
 	basicTheme := theme.BasicTheme(renderer, nil)
-
-	footerCommands := []*interfaces.FooterCommand{}
-
-	footer := models.NewFooter(&basicTheme, footerCommands)
-	footer.ResetCommands()
 
 	default_menu := menu.NewMenu().
 		AddItem(menu.NewMenuItem("projects", "Projects", screens.NewProjectsScreen(renderer))).
@@ -41,7 +34,6 @@ func NewModel(renderer *lipgloss.Renderer) tea.Model {
 		theme:    basicTheme,
 		width:    0,
 		height:   0,
-		footer:   footer,
 		menu:     default_menu,
 	}
 
@@ -65,14 +57,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Width:        msg.Width,
 				Height:       msg.Height,
 				MenuWidth:    m.menu.GetWidth(),
-				FooterHeight: lipgloss.Height(m.footer.View()),
+				FooterHeight: m.menu.FooterHeight(),
 			})
 		}))
 	}
-
-	m.footer.SetCommands(m.menu.GetCommands())
-
-	cmds = append(cmds, m.footer.Update(parentMsg))
 
 	return m, tea.Batch(cmds...)
 }
@@ -80,13 +68,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	menu := m.menu.View()
 	screen := m.menu.Screen()
-	footerContent := m.footer.View()
-
-	mainContent := lipgloss.JoinVertical(
-		lipgloss.Top,
-		screen,
-		footerContent,
-	)
 
 	return m.renderer.Place(
 		m.width,
@@ -96,6 +77,6 @@ func (m model) View() string {
 		m.theme.Base().
 			MaxWidth(m.width).
 			MaxHeight(m.height).
-			Render(lipgloss.JoinHorizontal(lipgloss.Left, menu, mainContent)),
+			Render(lipgloss.JoinHorizontal(lipgloss.Left, menu, screen)),
 	)
 }

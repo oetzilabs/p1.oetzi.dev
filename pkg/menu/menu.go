@@ -49,6 +49,13 @@ func NewMenu() *Menu {
 	}
 }
 
+func (m *Menu) FooterHeight() int {
+	if m.selectedItem == nil {
+		return 0
+	}
+	return m.selectedItem.screen.FooterHeight()
+}
+
 func (m *Menu) AddItem(item *MenuItem) *Menu {
 	m.items = append(m.items, item)
 	m.selectedItemIndex = len(m.items) - 1
